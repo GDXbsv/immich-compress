@@ -4,6 +4,7 @@ package immich
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -63,13 +64,21 @@ func (c *ClientSimple) GetAllAssets() <-chan struct {
 				Asset AssetResponseDto
 				Err   error
 			}{Asset: AssetResponseDto{}, Err: fmt.Errorf("error getting assets: %w", err)}
+
+			return
 		}
 
 		if resp.StatusCode != http.StatusOK {
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			bodyBytes, _ := io.ReadAll(resp.Body)
 			ch <- struct {
 				Asset AssetResponseDto
 				Err   error
-			}{Asset: AssetResponseDto{}, Err: fmt.Errorf("bad status code: %s", resp.Status)}
+			}{Asset: AssetResponseDto{}, Err: fmt.Errorf("bad status code: %s, body: %s", resp.Status, string(bodyBytes))}
+
+			return
 		}
 
 		parsedResp, err := ParseSearchAssetsResponse(resp)
