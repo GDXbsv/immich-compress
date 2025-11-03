@@ -48,23 +48,47 @@ func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey s
 	return &ClientSimple{client: client, ctx: ctx, parralel: parralel}, nil
 }
 
-func (c *ClientSimple) GetAllAssets() <-chan AssetResponseDto {
-	ch := make(chan AssetResponseDto, c.parralel)
+func (c *ClientSimple) GetAllAssets() <-chan struct {asset AssetResponseDto, err error} {
+	ch := make(chan struct {
+		asset AssetResponseDto
+		err    error
+	}, c.parralel)
 	defer close(ch)
 	resp, err := c.client.SearchAssets(c.ctx, SearchAssetsJSONRequestBody{})
 	if err != nil {
-		log.Fatalf("Error getting assets page (page=%d): %v", page, err)
+		ch <- struct {
+			asset AssetResponseDto
+			er    error
+		}{asset: nil, err: fmt.Errorf("Error getting assets: %w", err)}
+
+		return ch
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Bad status code: %s", resp.Status)
+		ch <- struct {
+			asset AssetResponseDto
+			er    error
+		}{asset: nil, err: fmt.Errorf("Bad status code: %s", resp.Status)}
+
+		return ch
 	}
 
 	parsedResp, err := ParseSearchAssetsResponse(resp)
 	if err != nil {
 		log.Fatalf("Error parsing response: %v", err)
+		ch <- struct {
+			asset AssetResponseDto
+			er    error
+		}{asset: nil, err: fmt.Errorf("Error parsing response: %w", err)}
+
+		return ch
 	}
 	for _, item := range parsedResp.JSON200.Assets.Items {
-		ch <- item
+		ch <- struct {
+			asset AssetResponseDto
+			er    error
+		}{asset: item, err: nil}
 	}
+
+	return ch
 }

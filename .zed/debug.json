@@ -2,4 +2,22 @@
 //
 // For more documentation on how to configure debug tasks,
 // see: https://zed.dev/docs/debugger
-[]
+[
+  {
+    "label": "Run compress",
+    "adapter": "Delve",
+    "mode": "debug",
+    "request": "launch",
+    "program": ".",
+    "args": [
+      "compress",
+      "--server",
+      "https://h-immich.gdxcloud.net",
+      "--api-key",
+      "Rn1FIUgc2oRedXx7rhT3s",
+      "-p",
+      "1"
+    ],
+    "debugger": "go"
+  }
+]
