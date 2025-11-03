@@ -9,15 +9,7 @@
     "mode": "debug",
     "request": "launch",
     "program": ".",
-    "args": [
-      "compress",
-      "--server",
-      "https://h-immich.gdxcloud.net/api",
-      "--api-key",
-      "<key>",
-      "-p",
-      "1"
-    ],
+    "args": ["compress", "--server", "<URL>", "--api-key", "<KEY>", "-p", "1"],
     "debugger": "go"
   }
 ]
