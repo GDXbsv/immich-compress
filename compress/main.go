@@ -43,7 +43,7 @@ func Compressing(ctx context.Context, parallel int, server string, apiKey string
 			}
 
 			// Process the asset here
-			fmt.Printf("Processing file: %#v\n", asset.Asset)
+			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
 			// TODO: Add actual compression logic here
 
 			return nil // Success for this asset

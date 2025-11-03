@@ -91,8 +91,13 @@ func (c *ClientSimple) getAssets(nextPage float32) (*SearchAssetsResponse, float
 	if err != nil {
 		return nil, 0, fmt.Errorf("error parsing response: %w", err)
 	}
-	nextPage64, _ := strconv.ParseFloat(*respParsed.JSON200.Assets.NextPage, 32)
-	nextPage = float32(nextPage64)
+	var nextPage32 float32
+	if respParsed.JSON200.Assets.NextPage != nil {
+		nextPage64, _ := strconv.ParseFloat(*respParsed.JSON200.Assets.NextPage, 32)
+		nextPage32 = float32(nextPage64)
+	} else {
+		nextPage32 = 0
+	}
 
-	return respParsed, nextPage, nil
+	return respParsed, nextPage32, nil
 }
