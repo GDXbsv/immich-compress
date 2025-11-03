@@ -4,14 +4,13 @@ package immich
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 )
 
 type ClientSimple struct {
 	client   *Client
 	ctx      context.Context
-	parralel int
+	parallel int
 }
 
 func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey string) (*ClientSimple, error) {
@@ -45,50 +44,53 @@ func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey s
 		return nil, fmt.Errorf("server ping failed with status: %v", resp.Status)
 	}
 
-	return &ClientSimple{client: client, ctx: ctx, parralel: parralel}, nil
+	return &ClientSimple{client: client, ctx: ctx, parallel: parralel}, nil
 }
 
-func (c *ClientSimple) GetAllAssets() <-chan struct {asset AssetResponseDto, err error} {
+func (c *ClientSimple) GetAllAssets() <-chan struct {
+	Asset AssetResponseDto
+	Err   error
+} {
 	ch := make(chan struct {
-		asset AssetResponseDto
-		err    error
-	}, c.parralel)
-	defer close(ch)
-	resp, err := c.client.SearchAssets(c.ctx, SearchAssetsJSONRequestBody{})
-	if err != nil {
-		ch <- struct {
-			asset AssetResponseDto
-			er    error
-		}{asset: nil, err: fmt.Errorf("Error getting assets: %w", err)}
+		Asset AssetResponseDto
+		Err   error
+	}, c.parallel)
+	go func() {
+		defer close(ch)
+		resp, err := c.client.SearchAssets(c.ctx, SearchAssetsJSONRequestBody{})
+		if err != nil {
+			ch <- struct {
+				Asset AssetResponseDto
+				Err   error
+			}{Asset: AssetResponseDto{}, Err: fmt.Errorf("error getting assets: %w", err)}
+		}
 
-		return ch
-	}
+		if resp.StatusCode != http.StatusOK {
+			ch <- struct {
+				Asset AssetResponseDto
+				Err   error
+			}{Asset: AssetResponseDto{}, Err: fmt.Errorf("bad status code: %s", resp.Status)}
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		ch <- struct {
-			asset AssetResponseDto
-			er    error
-		}{asset: nil, err: fmt.Errorf("Bad status code: %s", resp.Status)}
-
-		return ch
-	}
-
-	parsedResp, err := ParseSearchAssetsResponse(resp)
-	if err != nil {
-		log.Fatalf("Error parsing response: %v", err)
-		ch <- struct {
-			asset AssetResponseDto
-			er    error
-		}{asset: nil, err: fmt.Errorf("Error parsing response: %w", err)}
-
-		return ch
-	}
-	for _, item := range parsedResp.JSON200.Assets.Items {
-		ch <- struct {
-			asset AssetResponseDto
-			er    error
-		}{asset: item, err: nil}
-	}
+		parsedResp, err := ParseSearchAssetsResponse(resp)
+		if err != nil {
+			ch <- struct {
+				Asset AssetResponseDto
+				Err   error
+			}{Asset: AssetResponseDto{}, Err: fmt.Errorf("error parsing response: %w", err)}
+		}
+		for _, item := range parsedResp.JSON200.Assets.Items {
+			select {
+			case <-c.ctx.Done():
+				return
+			default:
+				ch <- struct {
+					Asset AssetResponseDto
+					Err   error
+				}{Asset: item, Err: nil}
+			}
+		}
+	}()
 
 	return ch
 }

@@ -4,42 +4,56 @@ package compress
 import (
 	"context"
 	"fmt"
-	"net/http"
+	"sync"
 
 	"immich-compress/immich"
 )
 
-func Compress(ctx context.Context, parallel int, server string, apiKey string) error {
-	// Create a new client.
-	// You must provide an http.Client that adds the API key to every request.
-	client, err := immich.NewClient(server, immich.WithRequestEditorFn(
-		func(ctx context.Context, req *http.Request) error {
-			req.Header.Set("x-api-key", apiKey)
-			return nil
-		}))
+func Compressing(ctx context.Context, parallel int, server string, apiKey string) error {
+	ctxCancel, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
+	client, err := immich.NewClientSimple(ctxCancel, parallel, server, apiKey)
 	if err != nil {
-		return fmt.Errorf("error creating client: %w", err)
+		return err
 	}
 
-	// Now you can call API functions.
-	// Let's ping the server to see if it's running.
-	resp, err := client.PingServer(ctx)
-	if err != nil {
-		return fmt.Errorf("error pinging server: %w", err)
+	ch := client.GetAllAssets()
+
+	// Create a worker pool to process assets in parallel
+	var wg sync.WaitGroup
+
+	// Create a channel to collect errors from workers
+	errCh := make(chan error, parallel)
+
+	// Start worker goroutines
+	for range parallel {
+		wg.Go(func() {
+			for asset := range ch {
+				if asset.Err != nil {
+					select {
+					case errCh <- asset.Err:
+					default:
+					}
+					continue
+				}
+
+				// Process the asset here
+				fmt.Printf("Processing file: %#v\n", asset.Asset)
+				// TODO: Add actual compression logic here
+			}
+		})
 	}
 
-	// Always close the response body
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
-		}
+	go func() {
+		wg.Wait()
+		close(errCh)
 	}()
 
-	// Check for a successful status code
-	if resp.StatusCode == http.StatusOK {
-		fmt.Println("Server ping was successful! Status:", resp.Status)
-	} else {
-		return fmt.Errorf("server ping failed with status: %v", resp.Status)
+	// Check for any errors
+	select {
+	case err := <-errCh:
+		return err
+	default:
 	}
 
 	return nil

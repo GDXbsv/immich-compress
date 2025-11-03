@@ -8,7 +8,7 @@ import (
 
 var flagsCompress struct {
 	flagServer string
-	flagApiKey string
+	flagAPIKey string
 }
 
 // compressCmd represents the compress command
@@ -17,7 +17,7 @@ var compressCmd = &cobra.Command{
 	Short: "Compress existing fotos/videos",
 	Long:  `A longer description TODO`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return compress.Compress(cmd.Context(), flagsRoot.flagParallel, flagsCompress.flagServer, flagsCompress.flagApiKey)
+		return compress.Compressing(cmd.Context(), flagsRoot.flagParallel, flagsCompress.flagServer, flagsCompress.flagAPIKey)
 	},
 }
 
@@ -28,9 +28,13 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagServer, "server", "s", "", "The immich server address")
-	compressCmd.MarkFlagRequired("server")
-	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagApiKey, "api-key", "a", "", "The immich server API key")
-	compressCmd.MarkFlagRequired("api-key")
+	if err := compressCmd.MarkPersistentFlagRequired("server"); err != nil {
+		panic(err)
+	}
+	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagAPIKey, "api-key", "a", "", "The immich server API key")
+	if err := compressCmd.MarkPersistentFlagRequired("api-key"); err != nil {
+		panic(err)
+	}
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
