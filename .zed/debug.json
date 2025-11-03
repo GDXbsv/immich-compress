@@ -12,9 +12,9 @@
     "args": [
       "compress",
       "--server",
-      "https://h-immich.gdxcloud.net",
+      "https://h-immich.gdxcloud.net/api",
       "--api-key",
-      "Rn1FIUgc2oRedXx7rhT3s",
+      "<key>",
       "-p",
       "1"
     ],
