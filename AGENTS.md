@@ -1,0 +1,38 @@
+# Agent Guidelines for immich-compress
+
+## Build & Test Commands
+- `go build` - Build the application
+- `go run .` - Run directly without building
+- `go test ./...` - Run all tests
+- `go test -v ./...` - Run tests with verbose output
+- `go test -run TestName ./...` - Run specific test
+- `go mod tidy` - Clean up dependencies
+- `go mod download` - Download dependencies
+
+## Code Style Guidelines
+- Use **camelCase** for variable/function names, **PascalCase** for exported functions/types
+- Import groups: stdlib, then third-party (alphabetical), then local imports
+- Use struct tags for CLI flags (Cobra framework)
+- Return errors with `fmt.Errorf("context: %w", err)` pattern
+- Always close HTTP response bodies with `defer resp.Body.Close()`
+- Use context.Context for all API operations
+- Name struct fields with **camelCase** for JSON marshaling
+- Use meaningful error messages and handle all errors explicitly
+
+## Project Structure
+- `cmd/` - CLI command definitions
+- `compress/` - Core compression logic
+- `immich/` - Auto-generated Immich API client
+- Entry point: `main.go` → `cmd.Execute()`
+
+## Naming Conventions
+- Package names: lowercase, no underscores
+- CLI commands: lowercase with hyphens
+- Flag variables: `flag<Command><Name>` struct pattern
+- Error variables: `<Action>Err` pattern
+
+## Error Handling
+- Always handle errors explicitly with `if err != nil`
+- Use context cancellation where appropriate
+- Log important operations but avoid sensitive data
+- Exit gracefully with `os.Exit(1)` on fatal errors
