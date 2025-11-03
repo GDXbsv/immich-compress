@@ -29,18 +29,21 @@ func Compressing(ctx context.Context, parallel int, server string, apiKey string
 	for range parallel {
 		wg.Go(func() {
 			for asset := range ch {
+				select {
+				case <-ctxCancel.Done():
+					return
+				default:
+				}
 				if asset.Err != nil {
-					select {
-					case errCh <- asset.Err:
-					default:
-					}
-					continue
+					errCh <- asset.Err
+					cancelFunc()
 				}
 
 				// Process the asset here
 				fmt.Printf("Processing file: %#v\n", asset.Asset)
 				// TODO: Add actual compression logic here
 			}
+			cancelFunc()
 		})
 	}
 
@@ -53,7 +56,7 @@ func Compressing(ctx context.Context, parallel int, server string, apiKey string
 	select {
 	case err := <-errCh:
 		return err
-	default:
+	case <-ctxCancel.Done():
 	}
 
 	return nil
