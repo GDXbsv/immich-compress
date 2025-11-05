@@ -57,7 +57,7 @@ sudo apt-get install -y \
   gobject-introspection libgirepository1.0-dev \
   libmagickwand-dev libmatio-dev libnifti2-dev \
   libjxl-dev libzip-dev libarchive-dev \
-  pkg-config go-runtime go-tools
+  pkg-config
 
 # Create missing NIfTI pkg-config file
 sudo mkdir -p /usr/local/lib/pkgconfig

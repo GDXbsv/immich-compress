@@ -31,7 +31,7 @@ jobs:
           gobject-introspection libgirepository1.0-dev \
           libmagickwand-dev libmatio-dev libnifti2-dev \
           libjxl-dev libzip-dev libarchive-dev \
-          pkg-config go-runtime go-tools
+          pkg-config
 
           # Create missing NIfTI pkg-config file to help libvips meson detect it
           sudo mkdir -p /usr/local/lib/pkgconfig
@@ -157,8 +157,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
           golangci-lint \
-          pkg-config \
-          go-runtime go-tools
+          pkg-config
         shell: bash
 
       - name: Set up Go
