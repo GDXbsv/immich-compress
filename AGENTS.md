@@ -45,7 +45,8 @@ dnf install pkgconfig vips-devel
 - **Jobs**:
   - **test**: Runs tests with coverage, race detection, and builds
   - **lint**: Code quality checks with golangci-lint
-- **Latest Go**: Automatically uses the latest Go version
+- **Go Version**: Uses Go stable (latest stable version)
+- **Setup Action**: actions/setup-go@v6
 - **Ubuntu Latest**: Uses `ubuntu-latest` runner
 - **System Dependencies**: Installs pkg-config and libvips-dev automatically
 

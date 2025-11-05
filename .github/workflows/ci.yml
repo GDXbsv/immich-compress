@@ -15,9 +15,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: "latest"
+          go-version: "stable"
           cache: true
 
       - name: Verify Go version
@@ -67,9 +67,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: "latest"
+          go-version: "stable"
           cache: true
 
       - name: Install system dependencies
