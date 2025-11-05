@@ -20,7 +20,7 @@ var flagsRoot struct {
 var rootCmd = &cobra.Command{
 	Use:   "immich-compress",
 	Short: "Compress existing fotos/videos",
-	Long:  `A longer description TODO`,
+	Long:  `Compress existing fotos/videos by downloading them compressing and upload as new one with the same metadata and corresponding tags.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) {

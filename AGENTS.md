@@ -38,6 +38,12 @@ pacman -S pkgconfig libvips
 dnf install pkgconfig vips-devel
 ```
 
+## Dependency Notes
+
+- **vipsgen**: Currently using v1.1.3 for compatibility with Ubuntu CI environment
+- **libvips**: Requires compatible version (libvips-dev from Ubuntu repositories)
+- The vipsgen dependency was downgraded from v1.2.1 due to VipsSdfShape compatibility issues with standard Ubuntu libvips versions
+
 ## CI/CD Pipeline
 
 - **GitHub Actions**: `.github/workflows/ci.yml`
