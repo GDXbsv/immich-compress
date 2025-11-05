@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-func (c *ClientSimple) AssetAllGet() <-chan struct {
+func (c *ClientSimple) AssetAllGet(limit int) <-chan struct {
 	Asset AssetResponseDto
 	Err   error
 } {
@@ -28,6 +28,7 @@ func (c *ClientSimple) AssetAllGet() <-chan struct {
 			return
 		}
 		var respCurrent *SearchAssetsResponse
+		processedCount := 0
 
 		var wg sync.WaitGroup
 		for {
@@ -49,6 +50,11 @@ func (c *ClientSimple) AssetAllGet() <-chan struct {
 			}
 			respCurrent = respNext
 			for _, item := range respCurrent.JSON200.Assets.Items {
+				// Check if limit is reached (limit 0 means no limit)
+				if limit > 0 && processedCount >= limit {
+					return
+				}
+
 				select {
 				case <-c.ctx.Done():
 					return
@@ -61,6 +67,7 @@ func (c *ClientSimple) AssetAllGet() <-chan struct {
 						Asset AssetResponseDto
 						Err   error
 					}{Asset: item, Err: nil}
+					processedCount++
 				}
 			}
 		}

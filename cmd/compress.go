@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"time"
+
 	"immich-compress/compress"
 
 	"github.com/spf13/cobra"
@@ -11,13 +13,29 @@ var flagsCompress struct {
 	flagAPIKey string
 }
 
+// Config holds configuration for compression command
+type Config struct {
+	Parallel int
+	Limit    int
+	Server   string
+	ApiKey   string
+	After    time.Time
+}
+
 // compressCmd represents the compress command
 var compressCmd = &cobra.Command{
 	Use:   "compress",
 	Short: "Compress existing fotos/videos",
 	Long:  `A longer description TODO`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return compress.Compressing(cmd.Context(), flagsRoot.flagParallel, flagsCompress.flagServer, flagsCompress.flagAPIKey, flagsRoot.flagAfter)
+		config := compress.Config{
+			Parallel: flagsRoot.flagParallel,
+			Limit:    flagsRoot.flagLimit,
+			Server:   flagsCompress.flagServer,
+			APIKey:   flagsCompress.flagAPIKey,
+			After:    flagsRoot.flagAfter,
+		}
+		return compress.Compressing(cmd.Context(), config)
 	},
 }
 

@@ -14,6 +14,7 @@ import (
 var flagsRoot struct {
 	flagParallel int
 	flagAfter    time.Time
+	flagLimit    int
 }
 
 // rootCmd represents the base command when called without any subcommands
@@ -45,6 +46,7 @@ func init() {
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.immich-compress.yaml)")
 	rootCmd.PersistentFlags().IntVarP(&flagsRoot.flagParallel, "parallel", "p", runtime.NumCPU(), "parallel")
 	rootCmd.PersistentFlags().TimeVarP(&flagsRoot.flagAfter, "after", "t", time.Now(), []string{immich.TAG_COMPRESSED_AT_FORMAT}, "after what time we want to recompress")
+	rootCmd.PersistentFlags().IntVarP(&flagsRoot.flagLimit, "limit", "l", 0, "maximum number of assets to compress")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.

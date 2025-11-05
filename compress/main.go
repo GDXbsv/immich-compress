@@ -11,15 +11,24 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Compressing(ctx context.Context, parallel int, server string, apiKey string, after time.Time) error {
+// Config holds configuration for compression
+type Config struct {
+	Parallel int
+	Limit    int
+	Server   string
+	APIKey   string
+	After    time.Time
+}
+
+func Compressing(ctx context.Context, config Config) error {
 	g, gCtx := errgroup.WithContext(ctx)
-	g.SetLimit(parallel)
-	client, err := immich.NewClientSimple(gCtx, parallel, server, apiKey)
+	g.SetLimit(config.Parallel)
+	client, err := immich.NewClientSimple(gCtx, config.Parallel, config.Server, config.APIKey)
 	if err != nil {
 		return err
 	}
 
-	ch := client.AssetAllGet()
+	ch := client.AssetAllGet(config.Limit)
 	// Start the workers. Instead of 'for range parallel', we simply
 	// read from the channel and run g.Go() for *each* element.
 	// SetLimit(parallel) will take care of the limit.
@@ -43,7 +52,7 @@ func Compressing(ctx context.Context, parallel int, server string, apiKey string
 				return asset.Err
 			}
 
-			if !asset.Asset.CompressedAfter(after) {
+			if !asset.Asset.CompressedAfter(config.After) {
 				return nil
 			}
 			// Process the asset here
