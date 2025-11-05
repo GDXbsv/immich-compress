@@ -1,6 +1,7 @@
 # Agent Guidelines for immich-compress
 
 ## Build & Test Commands
+
 - `go build` - Build the application
 - `go run .` - Run directly without building
 - `go test ./...` - Run all tests
@@ -9,7 +10,47 @@
 - `go mod tidy` - Clean up dependencies
 - `go mod download` - Download dependencies
 
+## System Dependencies
+
+The application requires the following system dependencies:
+
+### Ubuntu/Debian
+
+```bash
+sudo apt-get install -y pkg-config libvips-dev
+```
+
+### macOS
+
+```bash
+brew install vips pkg-config
+```
+
+### Arch Linux
+
+```bash
+pacman -S pkgconfig libvips
+```
+
+### Fedora
+
+```bash
+dnf install pkgconfig vips-devel
+```
+
+## CI/CD Pipeline
+
+- **GitHub Actions**: `.github/workflows/ci.yml`
+- **Triggered on**: Push and Pull Request to main/master/develop branches
+- **Jobs**:
+  - **test**: Runs tests with coverage, race detection, and builds
+  - **lint**: Code quality checks with golangci-lint
+- **Latest Go**: Automatically uses the latest Go version
+- **Ubuntu Latest**: Uses `ubuntu-latest` runner
+- **System Dependencies**: Installs pkg-config and libvips-dev automatically
+
 ## Code Style Guidelines
+
 - Use **camelCase** for variable/function names, **PascalCase** for exported functions/types
 - Import groups: stdlib, then third-party (alphabetical), then local imports
 - Use struct tags for CLI flags (Cobra framework)
@@ -20,18 +61,21 @@
 - Use meaningful error messages and handle all errors explicitly
 
 ## Project Structure
+
 - `cmd/` - CLI command definitions
 - `compress/` - Core compression logic
 - `immich/` - Auto-generated Immich API client
 - Entry point: `main.go` → `cmd.Execute()`
 
 ## Naming Conventions
+
 - Package names: lowercase, no underscores
 - CLI commands: lowercase with hyphens
 - Flag variables: `flag<Command><Name>` struct pattern
 - Error variables: `<Action>Err` pattern
 
 ## Error Handling
+
 - Always handle errors explicitly with `if err != nil`
 - Use context cancellation where appropriate
 - Log important operations but avoid sensitive data
