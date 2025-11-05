@@ -5,18 +5,25 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
+	"github.com/oapi-codegen/runtime/types"
 )
 
 type ClientSimple struct {
-	client   *Client
-	ctx      context.Context
-	parallel int
+	client    ClientWithResponsesInterface
+	clientRaw ClientInterface
+	ctx       context.Context
+	parallel  int
+	tags      struct {
+		compressedAtID types.UUID
+	}
 }
 
 func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey string) (*ClientSimple, error) {
 	// Create a new client.
 	// You must provide an http.Client that adds the API key to every request.
-	client, err := NewClient(baseURL, WithRequestEditorFn(
+	client, err := NewClientWithResponses(baseURL, WithRequestEditorFn(
 		func(ctx context.Context, req *http.Request) error {
 			req.Header.Set("x-api-key", apiKey)
 			return nil
@@ -25,24 +32,22 @@ func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey s
 		return nil, fmt.Errorf("error creating client: %w", err)
 	}
 
-	// Now you can call API functions.
-	// Let's ping the server to see if it's running.
-	resp, err := client.PingServer(ctx)
+	clientSimple := &ClientSimple{client: client, clientRaw: client.ClientInterface, ctx: ctx, parallel: parralel}
+
+	tagCompressedAtID, err := clientSimple.tagCompressedAt()
 	if err != nil {
-		return nil, fmt.Errorf("error pinging server: %w", err)
+		return nil, fmt.Errorf("can not get/create tags: %w", err)
 	}
 
-	// Always close the response body
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			fmt.Printf("warning: failed to close response body: %v\n", closeErr)
-		}
-	}()
+	clientSimple.tags = struct{ compressedAtID types.UUID }{compressedAtID: tagCompressedAtID}
 
-	// Check for a successful status code
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("server ping failed with status: %v", resp.Status)
+	return clientSimple, nil
+}
+
+func UUUIDOfString(id string) (types.UUID, error) {
+	uuid, err := uuid.Parse(id)
+	if err != nil {
+		err = fmt.Errorf("failed to parse UUID '%s': %w", id, err)
 	}
-
-	return &ClientSimple{client: client, ctx: ctx, parallel: parralel}, nil
+	return uuid, err
 }

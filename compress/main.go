@@ -4,13 +4,14 @@ package compress
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"immich-compress/immich"
 
 	"golang.org/x/sync/errgroup"
 )
 
-func Compressing(ctx context.Context, parallel int, server string, apiKey string) error {
+func Compressing(ctx context.Context, parallel int, server string, apiKey string, after time.Time) error {
 	g, gCtx := errgroup.WithContext(ctx)
 	g.SetLimit(parallel)
 	client, err := immich.NewClientSimple(gCtx, parallel, server, apiKey)
@@ -18,7 +19,7 @@ func Compressing(ctx context.Context, parallel int, server string, apiKey string
 		return err
 	}
 
-	ch := client.GetAllAssets()
+	ch := client.AssetAllGet()
 	// Start the workers. Instead of 'for range parallel', we simply
 	// read from the channel and run g.Go() for *each* element.
 	// SetLimit(parallel) will take care of the limit.
@@ -42,6 +43,9 @@ func Compressing(ctx context.Context, parallel int, server string, apiKey string
 				return asset.Err
 			}
 
+			if !asset.Asset.CompressedAfter(after) {
+				return nil
+			}
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
 			// TODO: Add actual compression logic here

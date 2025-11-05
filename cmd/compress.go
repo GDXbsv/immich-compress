@@ -17,7 +17,7 @@ var compressCmd = &cobra.Command{
 	Short: "Compress existing fotos/videos",
 	Long:  `A longer description TODO`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return compress.Compressing(cmd.Context(), flagsRoot.flagParallel, flagsCompress.flagServer, flagsCompress.flagAPIKey)
+		return compress.Compressing(cmd.Context(), flagsRoot.flagParallel, flagsCompress.flagServer, flagsCompress.flagAPIKey, flagsRoot.flagAfter)
 	},
 }
 
