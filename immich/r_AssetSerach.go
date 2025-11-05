@@ -2,7 +2,6 @@ package immich
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -93,12 +92,7 @@ func (c *ClientSimple) getAssets(search SearchAssetsJSONRequestBody) (*SearchAss
 	}
 
 	if r.StatusCode() != http.StatusOK {
-		defer func() {
-			_ = r.HTTPResponse.Body.Close()
-		}()
-		bodyBytes, _ := io.ReadAll(r.HTTPResponse.Body)
-
-		return nil, 0, fmt.Errorf("bad status code: %s, body: %s", r.Status(), string(bodyBytes))
+		return nil, 0, fmt.Errorf("bad status code: %s, body: %s", r.Status(), string(r.Body))
 	}
 	var nextPage32 float32
 	if r.JSON200.Assets.NextPage != nil {
