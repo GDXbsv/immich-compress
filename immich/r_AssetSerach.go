@@ -87,9 +87,7 @@ func (c *ClientSimple) getAssets(search SearchAssetsJSONRequestBody) (*SearchAss
 	if nextPage == 0 {
 		return nil, 0, nil
 	}
-	r, err := c.client.SearchAssetsWithResponse(c.ctx, SearchAssetsJSONRequestBody{
-		Page: &nextPage,
-	})
+	r, err := c.client.SearchAssetsWithResponse(c.ctx, search)
 	if err != nil {
 		return nil, 0, fmt.Errorf("error getting assets: %w", err)
 	}
