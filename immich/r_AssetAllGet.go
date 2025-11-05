@@ -53,7 +53,7 @@ func (c *ClientSimple) AssetAllGet() <-chan struct {
 				case <-c.ctx.Done():
 					return
 				default:
-					if !item.IsTrashed {
+					if item.IsTrashed {
 						continue
 					}
 

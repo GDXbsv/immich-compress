@@ -29,7 +29,7 @@ func (a *AssetResponseDto) CompressedAfter(timestamp time.Time) bool {
 	var err error
 
 	if when == "" {
-		return false
+		return true
 	}
 	timeCompressed, err = time.Parse(TAG_COMPRESSED_AT_FORMAT, when)
 	if err != nil {
