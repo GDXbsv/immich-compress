@@ -33,7 +33,7 @@ func (a *AssetResponseDto) CompressedAfter(timestamp time.Time) bool {
 	}
 	timeCompressed, err = time.Parse(TAG_COMPRESSED_AT_FORMAT, when)
 	if err != nil {
-		fmt.Printf("✗ Tag '%s' with value '%s' parsed with error: %w\n", TAG_COMPRESSED_AT, timestamp, err)
+		fmt.Printf("✗ Tag '%s' with value '%s' parsed with error: %v\n", TAG_COMPRESSED_AT, when, err)
 	}
 
 	if timeCompressed.Compare(timestamp) != 1 {
