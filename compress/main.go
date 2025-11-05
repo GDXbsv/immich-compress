@@ -4,6 +4,7 @@ package compress
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"immich-compress/immich"
@@ -13,11 +14,12 @@ import (
 
 // Config holds configuration for compression
 type Config struct {
-	Parallel int
-	Limit    int
-	Server   string
-	APIKey   string
-	After    time.Time
+	Parallel  int
+	Limit     int
+	AssetType string
+	Server    string
+	APIKey    string
+	After     time.Time
 }
 
 func Compressing(ctx context.Context, config Config) error {
@@ -28,7 +30,14 @@ func Compressing(ctx context.Context, config Config) error {
 		return err
 	}
 
-	ch := client.AssetAllGet(config.Limit)
+	var counter int32 = 0
+
+	searchOption := immich.SearchAssetsJSONRequestBody{}
+	if config.AssetType != "ALL" {
+		typeAsset := (immich.AssetTypeEnum)(config.AssetType)
+		searchOption.Type = &typeAsset
+	}
+	ch := client.AssetSearch(config.Limit, searchOption)
 	// Start the workers. Instead of 'for range parallel', we simply
 	// read from the channel and run g.Go() for *each* element.
 	// SetLimit(parallel) will take care of the limit.
@@ -57,6 +66,7 @@ func Compressing(ctx context.Context, config Config) error {
 			}
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
+			atomic.AddInt32(&counter, 1)
 			// TODO: Add actual compression logic here
 
 			return nil // Success for this asset
@@ -70,6 +80,8 @@ func Compressing(ctx context.Context, config Config) error {
 		// If there was an error (including cancellation), we return it
 		return err
 	}
+
+	fmt.Printf("Processed files: %d\n", counter)
 
 	return nil
 }

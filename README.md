@@ -139,6 +139,7 @@ immich-compress compress --help
 
 - `--server, -s string`: **Required** - Immich server address
 - `--api-key, -a string`: **Required** - Immich server API key
+- `--type, -i string`: Asset type to compress (IMAGE, VIDEO, ALL) (default: ALL)
 
 ### Environment Variables
 

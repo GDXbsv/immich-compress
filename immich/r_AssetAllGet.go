@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-func (c *ClientSimple) AssetAllGet(limit int) <-chan struct {
+func (c *ClientSimple) AssetSearch(limit int, search SearchAssetsJSONRequestBody) <-chan struct {
 	Asset AssetResponseDto
 	Err   error
 } {
@@ -18,7 +18,9 @@ func (c *ClientSimple) AssetAllGet(limit int) <-chan struct {
 	}, c.parallel)
 	go func() {
 		defer close(ch)
-		respNext, nextPage, err := c.getAssets(1)
+		var page float32 = 1
+		search.Page = &page
+		respNext, nextPage, err := c.getAssets(search)
 		if err != nil {
 			ch <- struct {
 				Asset AssetResponseDto
@@ -34,7 +36,8 @@ func (c *ClientSimple) AssetAllGet(limit int) <-chan struct {
 		for {
 			wg.Wait()
 			wg.Go(func() {
-				respNext, nextPage, err = c.getAssets(nextPage)
+				search.Page = &nextPage
+				respNext, nextPage, err = c.getAssets(search)
 				if err != nil {
 					ch <- struct {
 						Asset AssetResponseDto
@@ -76,7 +79,11 @@ func (c *ClientSimple) AssetAllGet(limit int) <-chan struct {
 	return ch
 }
 
-func (c *ClientSimple) getAssets(nextPage float32) (*SearchAssetsResponse, float32, error) {
+func (c *ClientSimple) getAssets(search SearchAssetsJSONRequestBody) (*SearchAssetsResponse, float32, error) {
+	if search.Page == nil {
+		return nil, 0, nil
+	}
+	nextPage := *search.Page
 	if nextPage == 0 {
 		return nil, 0, nil
 	}

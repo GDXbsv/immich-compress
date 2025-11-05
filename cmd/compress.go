@@ -9,17 +9,19 @@ import (
 )
 
 var flagsCompress struct {
-	flagServer string
-	flagAPIKey string
+	flagServer    string
+	flagAPIKey    string
+	flagAssetType string
 }
 
 // Config holds configuration for compression command
 type Config struct {
-	Parallel int
-	Limit    int
-	Server   string
-	APIKey   string
-	After    time.Time
+	Parallel  int
+	Limit     int
+	AssetType string
+	Server    string
+	APIKey    string
+	After     time.Time
 }
 
 // compressCmd represents the compress command
@@ -29,11 +31,12 @@ var compressCmd = &cobra.Command{
 	Long:  `A longer description TODO`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config := compress.Config{
-			Parallel: flagsRoot.flagParallel,
-			Limit:    flagsRoot.flagLimit,
-			Server:   flagsCompress.flagServer,
-			APIKey:   flagsCompress.flagAPIKey,
-			After:    flagsRoot.flagAfter,
+			Parallel:  flagsRoot.flagParallel,
+			Limit:     flagsRoot.flagLimit,
+			AssetType: flagsCompress.flagAssetType,
+			Server:    flagsCompress.flagServer,
+			APIKey:    flagsCompress.flagAPIKey,
+			After:     flagsRoot.flagAfter,
 		}
 		return compress.Compressing(cmd.Context(), config)
 	},
@@ -53,6 +56,7 @@ func init() {
 	if err := compressCmd.MarkPersistentFlagRequired("api-key"); err != nil {
 		panic(err)
 	}
+	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagAssetType, "type", "i", "ALL", "Asset type to compress (IMAGE, VIDEO, ALL)")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
