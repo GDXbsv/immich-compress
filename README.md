@@ -28,6 +28,7 @@ This project is currently under active development. While the core infrastructur
 - **Metadata Preservation**: Maintains original metadata and tags during compression
 - **Parallel Processing**: Configurable parallel processing for better performance
 - **Time-based Filtering**: Option to compress only assets after a specific timestamp
+- **Batch Limiting**: Option to limit the number of assets to process for testing or batch operations
 - **Immich Integration**: Seamless integration with existing Immich instances
 
 ## 🔧 Prerequisites
@@ -37,26 +38,31 @@ This project is currently under active development. While the core infrastructur
 Before installing immich-compress, ensure you have the following system dependencies installed:
 
 #### Ubuntu/Debian
+
 ```bash
 sudo apt-get install -y pkg-config libvips-dev libvips-tools
 ```
 
 #### macOS
+
 ```bash
 brew install vips pkg-config
 ```
 
 #### Arch Linux
+
 ```bash
 pacman -S pkgconfig libvips
 ```
 
 #### Fedora
+
 ```bash
 dnf install pkgconfig vips-devel
 ```
 
 ### Go Requirements
+
 - Go 1.23 or later
 - Git
 
@@ -65,6 +71,7 @@ dnf install pkgconfig vips-devel
 ### From Source
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/your-org/immich-compress.git
 cd immich-compress
@@ -73,11 +80,13 @@ cd immich-compress
 2. Install system dependencies (see [System Dependencies](#system-dependencies))
 
 3. Build the application:
+
 ```bash
 go build
 ```
 
 4. Install globally (optional):
+
 ```bash
 go install
 ```
@@ -91,7 +100,11 @@ Download the latest binary from the [Releases](https://github.com/your-org/immic
 ### Basic Usage
 
 ```bash
+# Basic compression of all assets
 immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY
+
+# Test compression with a limited number of assets (recommended for first run)
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 50
 ```
 
 ### Command Options
@@ -103,6 +116,12 @@ immich-compress compress --server https://your-immich-server.com --api-key YOUR_
 # Compress only assets after a specific date
 immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --after 2024-01-01
 
+# Compress with a limited number of assets (useful for testing)
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 100
+
+# Combine options - limited batch with parallel processing
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --parallel 4 --limit 50
+
 # Show help
 immich-compress --help
 immich-compress compress --help
@@ -111,10 +130,13 @@ immich-compress compress --help
 ### Command Line Options
 
 #### Global Options
+
 - `--parallel, -p int`: Number of parallel processes (default: number of CPU cores)
 - `--after, -t time`: Only compress assets after this timestamp
+- `--limit, -l int`: Maximum number of assets to compress (default: 0 = no limit)
 
 #### Compress Command
+
 - `--server, -s string`: **Required** - Immich server address
 - `--api-key, -a string`: **Required** - Immich server API key
 
@@ -180,9 +202,19 @@ go mod download
 ### Testing with Immich
 
 For testing purposes, you can:
+
 1. Use a test Immich instance
 2. Create a separate API key with limited permissions
-3. Test with a small number of assets first
+3. Test with a small number of assets first using the `--limit` flag:
+   ```bash
+   # Test with only 10 assets
+   immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 10
+   ```
+4. Combine with parallel processing for different test scenarios:
+   ```bash
+   # Test with limited assets and reduced parallelism
+   immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 5 --parallel 2
+   ```
 
 ## 🔧 System Dependencies
 
@@ -191,11 +223,13 @@ For testing purposes, you can:
 The application uses [libvips](https://libvips.github.io/libvips/) for image processing through the [vipsgen](https://github.com/cshum/vipsgen) Go bindings.
 
 **Current Dependencies:**
+
 - `pkg-config`: Build tool for managing library compile flags
 - `libvips-dev`: Development headers for libvips
 - `libvips-tools`: Additional libvips utilities
 
 **Compatibility Notes:**
+
 - Currently uses `vipsgen v1.1.3` for compatibility with Ubuntu CI
 - May require newer libvips versions for advanced features
 
@@ -251,6 +285,46 @@ We welcome contributions! Please see our contributing guidelines:
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 💡 Best Practices
+
+### Testing and Validation
+
+- **Start Small**: Always test with a limited number of assets first using the `--limit` flag:
+
+  ```bash
+  # Test with only 10 assets
+  immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 10
+  ```
+
+- **Gradual Scaling**: Once comfortable, gradually increase the limit and parallel settings:
+  ```bash
+  # Process 100 assets with moderate parallelism
+  immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 100 --parallel 4
+  ```
+
+### Performance Optimization
+
+- **Resource Monitoring**: Monitor your system resources (CPU, memory, network) during compression
+- **Parallel Processing**: Adjust `--parallel` based on your system's capabilities (start conservative)
+- **Time-based Filtering**: Use `--after` to process only recent assets for initial runs
+
+### Batch Operations
+
+- **Large Batches**: For processing large numbers of assets:
+
+  ```bash
+  # Process assets in batches of 500
+  immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 500 --parallel 8
+  ```
+
+- **Incremental Processing**: Run multiple times with different limits to process in chunks
+
+### Production Deployment
+
+- **Backup First**: Always backup your Immich data before running compression
+- **API Keys**: Use dedicated API keys with minimal permissions for compression tasks
+- **Resource Planning**: Ensure adequate disk space for temporary files during compression
 
 ## ⚠️ Important Notes
 
