@@ -1,6 +1,7 @@
 package immich
 
 import (
+	"fmt"
 	"testing"
 	"time"
 )
@@ -155,6 +156,236 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		// the compressed time should be considered "after" the EST time
 		if !result {
 			t.Errorf("Expected true for timezone test, got %v", result)
+		}
+	})
+}
+
+func TestAssetResponseDto_GetTag(t *testing.T) {
+	tests := []struct {
+		name     string
+		asset    *AssetResponseDto
+		tagName  string
+		expected string
+	}{
+		{
+			name:     "nil tags should return empty string",
+			asset:    &AssetResponseDto{Tags: nil},
+			tagName:  "test-tag",
+			expected: "",
+		},
+		{
+			name:     "empty tags should return empty string",
+			asset:    &AssetResponseDto{Tags: &[]TagResponseDto{}},
+			tagName:  "test-tag",
+			expected: "",
+		},
+		{
+			name: "tag not found should return empty string",
+			asset: &AssetResponseDto{
+				Tags: &[]TagResponseDto{
+					{Name: "other-tag", Value: "some-value"},
+				},
+			},
+			tagName:  "test-tag",
+			expected: "",
+		},
+		{
+			name: "tag found should return its value",
+			asset: &AssetResponseDto{
+				Tags: &[]TagResponseDto{
+					{Name: "test-tag", Value: "test-value"},
+				},
+			},
+			tagName:  "test-tag",
+			expected: "test-value",
+		},
+		{
+			name: "multiple tags with target tag found",
+			asset: &AssetResponseDto{
+				Tags: &[]TagResponseDto{
+					{Name: "tag1", Value: "value1"},
+					{Name: "test-tag", Value: "target-value"},
+					{Name: "tag2", Value: "value2"},
+				},
+			},
+			tagName:  "test-tag",
+			expected: "target-value",
+		},
+		{
+			name: "case sensitive tag name matching",
+			asset: &AssetResponseDto{
+				Tags: &[]TagResponseDto{
+					{Name: "Test-Tag", Value: "case-sensitive"},
+				},
+			},
+			tagName:  "test-tag",
+			expected: "",
+		},
+		{
+			name: "duplicate tags should return first match",
+			asset: &AssetResponseDto{
+				Tags: &[]TagResponseDto{
+					{Name: "test-tag", Value: "first"},
+					{Name: "test-tag", Value: "second"},
+				},
+			},
+			tagName:  "test-tag",
+			expected: "first",
+		},
+		{
+			name: "empty tag value should return empty string",
+			asset: &AssetResponseDto{
+				Tags: &[]TagResponseDto{
+					{Name: "test-tag", Value: ""},
+				},
+			},
+			tagName:  "test-tag",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.asset.GetTag(tt.tagName)
+			if result != tt.expected {
+				t.Errorf("GetTag() = %v, want %v", result, tt.expected)
+			}
+		})
+	}
+}
+
+// Test edge case with very large time values
+func TestAssetResponseDto_CompressedAfter_EdgeCaseTimes(t *testing.T) {
+	t.Run("very old timestamp", func(t *testing.T) {
+		veryOldTime := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
+		currentTime := time.Now()
+
+		tags := &[]TagResponseDto{
+			{Name: TAG_COMPRESSED_AT, Value: veryOldTime.Format(TAG_COMPRESSED_AT_FORMAT)},
+		}
+
+		asset := &AssetResponseDto{Tags: tags}
+		result := asset.CompressedAfter(currentTime)
+
+		if !result {
+			t.Errorf("Expected true for very old timestamp, got %v", result)
+		}
+	})
+
+	t.Run("future timestamp", func(t *testing.T) {
+		currentTime := time.Now()
+		farFutureTime := currentTime.AddDate(10, 0, 0)
+
+		tags := &[]TagResponseDto{
+			{Name: TAG_COMPRESSED_AT, Value: farFutureTime.Format(TAG_COMPRESSED_AT_FORMAT)},
+		}
+
+		asset := &AssetResponseDto{Tags: tags}
+		result := asset.CompressedAfter(currentTime)
+
+		if result {
+			t.Errorf("Expected false for future timestamp, got %v", result)
+		}
+	})
+
+	t.Run("microsecond precision test", func(t *testing.T) {
+		baseTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
+		slightlyLater := baseTime.Add(time.Microsecond)
+
+		tags := &[]TagResponseDto{
+			{Name: TAG_COMPRESSED_AT, Value: baseTime.Format(TAG_COMPRESSED_AT_FORMAT)},
+		}
+
+		asset := &AssetResponseDto{Tags: tags}
+		result := asset.CompressedAfter(slightlyLater)
+
+		if !result {
+			t.Errorf("Expected true for microsecond precision test, got %v", result)
+		}
+	})
+}
+
+// Test performance with large number of tags
+func TestAssetResponseDto_GetTag_Performance(t *testing.T) {
+	// Create asset with many tags
+	numTags := 1000
+	tags := make([]TagResponseDto, numTags)
+	for i := 0; i < numTags; i++ {
+		tags[i] = TagResponseDto{
+			Name:  fmt.Sprintf("tag-%d", i),
+			Value: fmt.Sprintf("value-%d", i),
+		}
+	}
+
+	// Add our target tag somewhere in the middle
+	targetIndex := numTags / 2
+	tags[targetIndex] = TagResponseDto{
+		Name:  TAG_COMPRESSED_AT,
+		Value: "2024-01-01 12:00:00",
+	}
+
+	asset := &AssetResponseDto{
+		Tags: &tags,
+	}
+
+	// Test that GetTag still works efficiently
+	result := asset.GetTag(TAG_COMPRESSED_AT)
+	if result != "2024-01-01 12:00:00" {
+		t.Errorf("Expected '2024-01-01 12:00:00', got %v", result)
+	}
+
+	// Benchmark the performance
+	benchmarkResult := testing.Benchmark(func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			asset.GetTag(TAG_COMPRESSED_AT)
+		}
+	})
+
+	t.Logf("GetTag performance: %v ns/op", benchmarkResult.NsPerOp())
+}
+
+// Test constants validation
+func TestTagConstants(t *testing.T) {
+	if TAG_COMPRESSED_AT != "__compressed_at__" {
+		t.Errorf("TAG_COMPRESSED_AT = %v, want %v", TAG_COMPRESSED_AT, "__compressed_at__")
+	}
+	if TAG_COMPRESSED_AT_FORMAT != "2006-01-02 15:04:05" {
+		t.Errorf("TAG_COMPRESSED_AT_FORMAT = %v, want %v", TAG_COMPRESSED_AT_FORMAT, "2006-01-02 15:04:05")
+	}
+	if TAG_ROOT != "__immich-compress__" {
+		t.Errorf("TAG_ROOT = %v, want %v", TAG_ROOT, "__immich-compress__")
+	}
+}
+
+// Test memory safety with nil pointer scenarios
+func TestAssetResponseDto_NilPointerSafety(t *testing.T) {
+	t.Run("GetTag with nil asset", func(t *testing.T) {
+		// This should not panic even if asset is somehow nil
+		// Note: We can't actually call this on a nil receiver in Go,
+		// but we can test with empty/default values
+		var asset *AssetResponseDto
+		if asset != nil {
+			result := asset.GetTag("test")
+			t.Errorf("Expected nil asset to not call GetTag, got %v", result)
+		}
+	})
+
+	t.Run("CompressedAfter with various nil scenarios", func(t *testing.T) {
+		baseTime := time.Now()
+
+		// Test with Tags set to nil
+		assetNilTags := &AssetResponseDto{Tags: nil}
+		result := assetNilTags.CompressedAfter(baseTime)
+		if !result {
+			t.Errorf("Expected true for nil tags, got %v", result)
+		}
+
+		// Test with empty slice
+		assetEmptyTags := &AssetResponseDto{Tags: &[]TagResponseDto{}}
+		result = assetEmptyTags.CompressedAfter(baseTime)
+		if !result {
+			t.Errorf("Expected true for empty tags, got %v", result)
 		}
 	})
 }
