@@ -9,46 +9,121 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      CGO_CFLAGS_ALLOW: -Xpreprocessor
+      VIPS_VERSION: 8.17.3
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libvips-dev libvips-tools
+          sudo apt-get install -y \
+          meson ninja-build \
+          libglib2.0-dev libexpat-dev librsvg2-dev libpng-dev \
+          libjpeg-turbo8-dev libimagequant-dev libfftw3-dev \
+          libpoppler-glib-dev libxml2-dev \
+          libopenslide-dev libcfitsio-dev liborc-0.4-dev libpango1.0-dev \
+          libtiff5-dev libgsf-1-dev giflib-tools libwebp-dev libheif-dev \
+          libopenjp2-7-dev libcgif-dev \
+          gobject-introspection libgirepository1.0-dev \
+          libmagickwand-dev libmatio-dev libnifti2-dev \
+          libjxl-dev libzip-dev libarchive-dev \
+          pkg-config go-runtime go-tools
+
+          # Create missing NIfTI pkg-config file to help libvips meson detect it
+          sudo mkdir -p /usr/local/lib/pkgconfig
+          sudo tee /usr/local/lib/pkgconfig/niftiio.pc > /dev/null <<EOF
+          prefix=/usr
+          exec_prefix=\${prefix}
+          libdir=\${prefix}/lib/x86_64-linux-gnu
+          includedir=\${prefix}/include/nifti
+
+          Name: libniftiio
+          Description: nifti library
+          Version: 3.0.1
+          Requires:
+          Cflags: -I\${includedir}
+          Libs: -L\${libdir} -lniftiio -lznz
+          EOF
         shell: bash
 
-      - name: Check libvips version
+      - name: Cache libvips
+        uses: actions/cache@v3
+        with:
+          path: vips-${{ env.VIPS_VERSION }}
+          key: ${{ runner.os }}-24.04-vips-introspection-5-${{ env.VIPS_VERSION }}
+          restore-keys: |
+            ${{ runner.os }}-24.04-vips-introspection-5-
+
+      - name: Build libvips from source
         run: |
-          echo "Installed libvips version:"
-          pkg-config --modversion vips || echo "libvips not found"
-          echo "Available libvips libraries:"
-          ldconfig -p | grep libvips || echo "No libvips libraries found"
+          if [ ! -d "vips-${{ env.VIPS_VERSION }}" ]
+          then
+            wget https://github.com/libvips/libvips/releases/download/v${{ env.VIPS_VERSION }}/vips-${{ env.VIPS_VERSION }}.tar.xz
+            tar xf vips-${{ env.VIPS_VERSION }}.tar.xz
+          fi
+          cd vips-${{ env.VIPS_VERSION }}
+
+          # Detect all available features
+          PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/lib/pkgconfig meson setup _build \
+          --buildtype=release \
+          --strip \
+          --prefix=/usr/local \
+          --libdir=lib \
+          -Dmagick=enabled \
+          -Dopenslide=enabled \
+          -Dintrospection=enabled \
+          -Djpeg-xl=enabled
+
+          ninja -C _build
+          sudo ninja -C _build install
+          sudo ldconfig
+        shell: bash
+
+      - name: Verify vips and introspection
+        run: |
+          echo "Checking vips version and introspection files"
+          vips --version
+          ls -la /usr/local/share/gir-1.0/ || true
+          ls -la /usr/share/gir-1.0/ || true
+          pkg-config --modversion gobject-introspection-1.0 || true
+          # List all loaders and savers to verify formats
+          echo "All supported formats:"
+          vips --list | grep -E "load|save"
         shell: bash
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v4
         with:
-          go-version: "stable"
+          go-version: ^1.24
           cache: true
+
+      - name: Cache Go dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Get dependencies
+        run: go mod download
 
       - name: Verify Go version
         run: go version
 
-      - name: Download Go dependencies
-        run: go mod download
-
-      - name: Tidy Go modules
-        run: go mod tidy
-        continue-on-error: true
-
-      - name: Run tests with coverage
-        run: go test -v -coverprofile=coverage.out ./...
+      - name: Run tests
+        run: |
+          $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go test -v -coverprofile=coverage.out ./...
 
       - name: Run tests with race detection
-        run: go test -race ./...
+        run: |
+          $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go test -race ./...
         continue-on-error: true
 
       - name: Install goveralls (for coverage reporting)
@@ -65,26 +140,32 @@ jobs:
         continue-on-error: true
 
       - name: Build application
-        run: go build -v ./...
+        run: |
+          $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go build -v ./...
 
   lint:
     runs-on: ubuntu-latest
+    env:
+      CGO_CFLAGS_ALLOW: -Xpreprocessor
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: "stable"
-          cache: true
-
-      - name: Install system dependencies
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libvips-dev libvips-tools
+          sudo apt-get install -y \
+          golangci-lint \
+          pkg-config \
+          go-runtime go-tools
         shell: bash
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ^1.24
+          cache: true
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6

@@ -7,7 +7,7 @@ require (
 	github.com/spf13/cobra v1.10.1
 )
 
-require github.com/cshum/vipsgen v1.1.3
+require github.com/cshum/vipsgen v1.2.1
 
 require (
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
