@@ -75,8 +75,12 @@ func TestCompressCommandRequiredFlagsValidation(t *testing.T) {
 		// Copy flag definitions from compressCmd
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagServer, "server", "s", "", "The immich server address")
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagAPIKey, "api-key", "a", "", "The immich server API key")
-		cmd.MarkPersistentFlagRequired("server")
-		cmd.MarkPersistentFlagRequired("api-key")
+		if err := cmd.MarkPersistentFlagRequired("server"); err != nil {
+			panic("Failed to mark server flag as required: " + err.Error())
+		}
+		if err := cmd.MarkPersistentFlagRequired("api-key"); err != nil {
+			panic("Failed to mark api-key flag as required: " + err.Error())
+		}
 
 		cmd.SetArgs([]string{})
 
@@ -102,8 +106,12 @@ func TestCompressCommandRequiredFlagsValidation(t *testing.T) {
 
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagServer, "server", "s", "", "The immich server address")
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagAPIKey, "api-key", "a", "", "The immich server API key")
-		cmd.MarkPersistentFlagRequired("server")
-		cmd.MarkPersistentFlagRequired("api-key")
+		if err := cmd.MarkPersistentFlagRequired("server"); err != nil {
+			panic("Failed to mark server flag as required: " + err.Error())
+		}
+		if err := cmd.MarkPersistentFlagRequired("api-key"); err != nil {
+			panic("Failed to mark api-key flag as required: " + err.Error())
+		}
 
 		cmd.SetArgs([]string{"--api-key", "test-key"})
 
@@ -129,8 +137,12 @@ func TestCompressCommandRequiredFlagsValidation(t *testing.T) {
 
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagServer, "server", "s", "", "The immich server address")
 		cmd.PersistentFlags().StringVarP(&flagsCompress.flagAPIKey, "api-key", "a", "", "The immich server API key")
-		cmd.MarkPersistentFlagRequired("server")
-		cmd.MarkPersistentFlagRequired("api-key")
+		if err := cmd.MarkPersistentFlagRequired("server"); err != nil {
+			t.Fatalf("Failed to mark server flag as required: %v", err)
+		}
+		if err := cmd.MarkPersistentFlagRequired("api-key"); err != nil {
+			t.Fatalf("Failed to mark api-key flag as required: %v", err)
+		}
 
 		cmd.SetArgs([]string{"--server", "https://test.com"})
 

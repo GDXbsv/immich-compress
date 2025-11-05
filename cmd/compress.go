@@ -18,7 +18,7 @@ type Config struct {
 	Parallel int
 	Limit    int
 	Server   string
-	ApiKey   string
+	APIKey   string
 	After    time.Time
 }
 
