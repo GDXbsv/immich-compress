@@ -159,6 +159,10 @@ immich-compress compress --help
 - `--type, -i string`: Asset type to compress (IMAGE, VIDEO, ALL) (default: ALL)
 - `--image-quality, -q int`: Image quality for compression (1-100) (default: 80)
 - `--image-format, -f string`: Image format for compression (jpg, jpeg, jxl, webp, heif) (default: jpg)
+- `--video-quality, -Q int`: Video quality for compression (1-100) Lower is higher quality (default: 25)
+- `--video-format, -F string`: Video format for compression (av1, hevc) (default: av1)
+- `--video-container, -c string`: Video container format (mkv, mp4) (default: mkv)
+- `--diff-percents, -D int`: If size diff is lower than this percent files will not be replaced with new (default: 8)
 
 ### Environment Variables
 

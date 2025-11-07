@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"immich-compress/compress"
 
@@ -11,7 +10,7 @@ import (
 )
 
 // formatSlice converts ImageFormat slice to string slice
-func formatSlice(formats []compress.ImageFormat) []string {
+func formatSlice[T ~string](formats []T) []string {
 	result := make([]string, len(formats))
 	for i, format := range formats {
 		result[i] = string(format)
@@ -20,24 +19,28 @@ func formatSlice(formats []compress.ImageFormat) []string {
 }
 
 var flagsCompress struct {
-	flagServer       string
-	flagAPIKey       string
-	flagAssetType    string
-	flagImageQuality int
-	flagImageFormat  string
+	flagDiff           int
+	flagServer         string
+	flagAPIKey         string
+	flagAssetType      string
+	flagImageQuality   int
+	flagImageFormat    string
+	flagVideoQuality   int
+	flagVideoFormat    string
+	flagVideoContainer string
 }
 
 // Config holds configuration for compression command
-type Config struct {
-	Parallel     int
-	Limit        int
-	AssetType    string
-	Server       string
-	APIKey       string
-	After        time.Time
-	ImageQuality int
-	ImageFormat  compress.ImageFormat
-}
+// type Config struct {
+// 	Parallel     int
+// 	Limit        int
+// 	AssetType    string
+// 	Server       string
+// 	APIKey       string
+// 	After        time.Time
+// 	ImageQuality int
+// 	ImageFormat  compress.ImageFormat
+// }
 
 // compressCmd represents the compress command
 var compressCmd = &cobra.Command{
@@ -46,14 +49,18 @@ var compressCmd = &cobra.Command{
 	Long:  `A longer description TODO`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config := compress.Config{
-			Parallel:     flagsRoot.flagParallel,
-			Limit:        flagsRoot.flagLimit,
-			AssetType:    flagsCompress.flagAssetType,
-			Server:       flagsCompress.flagServer,
-			APIKey:       flagsCompress.flagAPIKey,
-			After:        flagsRoot.flagAfter,
-			ImageQuality: flagsCompress.flagImageQuality,
-			ImageFormat:  (compress.ImageFormat)(strings.ToLower(strings.TrimSpace(flagsCompress.flagImageFormat))),
+			Parallel:       flagsRoot.flagParallel,
+			Limit:          flagsRoot.flagLimit,
+			AssetType:      flagsCompress.flagAssetType,
+			Server:         flagsCompress.flagServer,
+			APIKey:         flagsCompress.flagAPIKey,
+			After:          flagsRoot.flagAfter,
+			DiffPercent:    flagsCompress.flagDiff,
+			ImageQuality:   flagsCompress.flagImageQuality,
+			ImageFormat:    (compress.ImageFormat)(strings.ToLower(strings.TrimSpace(flagsCompress.flagImageFormat))),
+			VideoContainer: (compress.VideoContainer)(strings.ToLower(strings.TrimSpace(flagsCompress.flagVideoContainer))),
+			VideoFormat:    (compress.VideoFormat)(strings.ToLower(strings.TrimSpace(flagsCompress.flagVideoFormat))),
+			VideoQuality:   flagsCompress.flagVideoQuality,
 		}
 		return compress.Compressing(cmd.Context(), config)
 	},
@@ -75,7 +82,11 @@ func init() {
 	}
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagAssetType, "type", "i", "ALL", "Asset type to compress (IMAGE, VIDEO, ALL)")
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagImageQuality, "image-quality", "q", 80, "Image quality for compression (1-100)")
-	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagImageFormat, "image-format", "f", string(compress.JXL), fmt.Sprintf("Image format for compression (%v)", strings.Join(formatSlice(compress.ImageAvailableFormats), ", ")))
+	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagImageFormat, "image-format", "f", string(compress.JXL), fmt.Sprintf("Image format for compression (%v)", strings.Join(formatSlice(compress.ImageFormatsAvailable), ", ")))
+	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagVideoQuality, "video-quality", "Q", 25, "Video quality for compression (1-100). Lower is higher quality")
+	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagVideoFormat, "video-format", "F", string(compress.AV1), fmt.Sprintf("Video format for compression (%v)", strings.Join(formatSlice(compress.VideoFormatsAvailable), ", ")))
+	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagVideoContainer, "video-container", "C", string(compress.MKV), fmt.Sprintf("Video container format (%v)", strings.Join(formatSlice(compress.VideoContainersAvailable), ", ")))
+	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagDiff, "diff-percents", "D", 8, "If size diff is lower than this percent files will not be replaced with new.")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
