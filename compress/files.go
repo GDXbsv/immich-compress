@@ -24,7 +24,7 @@ func compresFile(client *immich.ClientSimple, asset immich.AssetResponseDto, ima
 		sizeOrig = *asset.ExifInfo.FileSizeInByte
 		sizeNew = int64(len(fileBytes))
 
-		if useNewFileBuffer(sizeNew, sizeOrig) {
+		if sizeOrig-sizeNew >= 60000 {
 			err = uploadBuffer(client, asset, fileBytes)
 			if err != nil {
 				return err
@@ -49,10 +49,6 @@ func compresFile(client *immich.ClientSimple, asset immich.AssetResponseDto, ima
 	}
 
 	return nil
-}
-
-func useNewFileBuffer(sizeNew int64, sizeOrig int64) bool {
-	return sizeOrig-sizeNew >= 60000
 }
 
 func bytesToMB(bytes int64) float64 {
@@ -227,4 +223,7 @@ func compressImage(client *immich.ClientSimple, asset immich.AssetResponseDto, i
 	}
 
 	return imageBytes, nil
+}
+
+func compressVideo(client *immich.ClientSimple, asset immich.AssetResponseDto, imageConfig ImageConfig) ([]byte, error) {
 }
