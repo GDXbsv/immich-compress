@@ -74,6 +74,9 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	fileIn.Close() // Close to ensure all data is written
 
 	args := make([]string, 20)
+	args = append(args,
+		"-i", fileIn.Name(),
+	)
 
 	switch c.Format {
 	case AV1:
@@ -127,7 +130,6 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	// -c:a libopus: Use the Opus audio codec, a great companion for AV1.
 	// -b:a 128k: Set audio bitrate to 128kbps.
 	args = append(args, []string{
-		"-i", fileIn.Name(),
 		"-crf", strconv.Itoa(c.Quality), // Was 30. Lower is higher quality.
 		fileOut.Name(),
 	}...)
