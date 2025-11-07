@@ -2,6 +2,7 @@ package compress
 
 import (
 	"fmt"
+	"io"
 	"math"
 
 	"immich-compress/immich"
@@ -170,11 +171,15 @@ func compressImage(client *immich.ClientSimple, asset immich.AssetResponseDto, i
 		return nil, fmt.Errorf("failed to fetch image: %w", err)
 	}
 	defer resp.Body.Close()
-	// Use resp.Body (which is []byte) directly
-	source := vips.NewSource(resp.Body)
-	defer source.Close() // source needs to remain available during image lifetime
 
-	image, err := vips.NewVipsloadSource(source, vips.DefaultVipsloadSourceOptions())
+	// Read the response body into a byte buffer
+	fileBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Load image from buffer instead of source
+	image, err := vips.NewImageFromBuffer(fileBytes, vips.DefaultLoadOptions())
 	if err != nil {
 		return nil, fmt.Errorf("failed to load image: %w", err)
 	}
