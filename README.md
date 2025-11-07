@@ -29,6 +29,8 @@ This project is currently under active development. While the core infrastructur
 - **Parallel Processing**: Configurable parallel processing for better performance
 - **Time-based Filtering**: Option to compress only assets after a specific timestamp
 - **Batch Limiting**: Option to limit the number of assets to process for testing or batch operations
+- **Image Quality Control**: Configurable image quality (1-100) with smart default of 80
+- **Multiple Format Support**: Support for jpg, jpeg, jxl, webp, and heif image formats
 - **Immich Integration**: Seamless integration with existing Immich instances
 
 ## 🔧 Prerequisites
@@ -122,6 +124,21 @@ immich-compress compress --server https://your-immich-server.com --api-key YOUR_
 # Combine options - limited batch with parallel processing
 immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --parallel 4 --limit 50
 
+# Compress with custom image quality
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --image-quality 90
+
+# Compress to specific image format (WebP)
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --image-format webp
+
+# Compress with high quality JPEG format
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --image-quality 95 --image-format jpeg
+
+# Compress using modern JXL format with balanced quality
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --image-quality 80 --image-format jxl
+
+# Batch process with format and quality settings
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 100 --parallel 4 --image-quality 85 --image-format webp
+
 # Show help
 immich-compress --help
 immich-compress compress --help
@@ -140,6 +157,8 @@ immich-compress compress --help
 - `--server, -s string`: **Required** - Immich server address
 - `--api-key, -a string`: **Required** - Immich server API key
 - `--type, -i string`: Asset type to compress (IMAGE, VIDEO, ALL) (default: ALL)
+- `--image-quality, -q int`: Image quality for compression (1-100) (default: 80)
+- `--image-format, -f string`: Image format for compression (jpg, jpeg, jxl, webp, heif) (default: jpg)
 
 ### Environment Variables
 
@@ -309,6 +328,32 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Resource Monitoring**: Monitor your system resources (CPU, memory, network) during compression
 - **Parallel Processing**: Adjust `--parallel` based on your system's capabilities (start conservative)
 - **Time-based Filtering**: Use `--after` to process only recent assets for initial runs
+
+### Image Compression Settings
+
+- **Quality vs Size**: Balance image quality with file size using `--image-quality`:
+  - Quality 70-80: Good balance for most use cases (default: 80)
+  - Quality 90+: Minimal size reduction, better quality preservation
+  - Quality 50-70: Smaller files, noticeable quality loss
+
+- **Format Selection**: Choose optimal image formats with `--image-format`:
+  - **jpg/jpeg**: Best compatibility, moderate compression
+  - **webp**: Modern format, excellent compression, good quality
+  - **jxl**: Cutting-edge format, superior compression, emerging support
+  - **heif**: Apple ecosystem, good compression, limited browser support
+
+- **Recommended Settings**:
+
+  ```bash
+  # For general use - WebP with balanced quality
+  immich-compress compress --server ... --image-format webp --image-quality 80
+
+  # For maximum compatibility - JPEG with high quality
+  immich-compress compress --server ... --image-format jpeg --image-quality 90
+
+  # For archival/quality preservation
+  immich-compress compress --server ... --image-format jxl --image-quality 95
+  ```
 
 ### Batch Operations
 
