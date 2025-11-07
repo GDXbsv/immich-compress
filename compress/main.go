@@ -14,12 +14,14 @@ import (
 
 // Config holds configuration for compression
 type Config struct {
-	Parallel  int
-	Limit     int
-	AssetType string
-	Server    string
-	APIKey    string
-	After     time.Time
+	Parallel     int
+	Limit        int
+	AssetType    string
+	Server       string
+	APIKey       string
+	After        time.Time
+	ImageFormat  ImageFormat
+	ImageQuality int
 }
 
 func Compressing(ctx context.Context, config Config) error {
@@ -67,8 +69,8 @@ func Compressing(ctx context.Context, config Config) error {
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
 			err = compresFile(client, asset.Asset, ImageConfig{
-				Format:  JXL,
-				Quality: 80,
+				Format:  config.ImageFormat,
+				Quality: config.ImageQuality,
 			})
 			if err != nil {
 				return err

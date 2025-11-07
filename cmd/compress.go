@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+	"strings"
 	"time"
 
 	"immich-compress/compress"
@@ -8,20 +10,33 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// formatSlice converts ImageFormat slice to string slice
+func formatSlice(formats []compress.ImageFormat) []string {
+	result := make([]string, len(formats))
+	for i, format := range formats {
+		result[i] = string(format)
+	}
+	return result
+}
+
 var flagsCompress struct {
-	flagServer    string
-	flagAPIKey    string
-	flagAssetType string
+	flagServer       string
+	flagAPIKey       string
+	flagAssetType    string
+	flagImageQuality int
+	flagImageFormat  string
 }
 
 // Config holds configuration for compression command
 type Config struct {
-	Parallel  int
-	Limit     int
-	AssetType string
-	Server    string
-	APIKey    string
-	After     time.Time
+	Parallel     int
+	Limit        int
+	AssetType    string
+	Server       string
+	APIKey       string
+	After        time.Time
+	ImageQuality int
+	ImageFormat  compress.ImageFormat
 }
 
 // compressCmd represents the compress command
@@ -31,12 +46,14 @@ var compressCmd = &cobra.Command{
 	Long:  `A longer description TODO`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		config := compress.Config{
-			Parallel:  flagsRoot.flagParallel,
-			Limit:     flagsRoot.flagLimit,
-			AssetType: flagsCompress.flagAssetType,
-			Server:    flagsCompress.flagServer,
-			APIKey:    flagsCompress.flagAPIKey,
-			After:     flagsRoot.flagAfter,
+			Parallel:     flagsRoot.flagParallel,
+			Limit:        flagsRoot.flagLimit,
+			AssetType:    flagsCompress.flagAssetType,
+			Server:       flagsCompress.flagServer,
+			APIKey:       flagsCompress.flagAPIKey,
+			After:        flagsRoot.flagAfter,
+			ImageQuality: flagsCompress.flagImageQuality,
+			ImageFormat:  (compress.ImageFormat)(strings.ToLower(strings.TrimSpace(flagsCompress.flagImageFormat))),
 		}
 		return compress.Compressing(cmd.Context(), config)
 	},
@@ -57,6 +74,8 @@ func init() {
 		panic(err)
 	}
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagAssetType, "type", "i", "ALL", "Asset type to compress (IMAGE, VIDEO, ALL)")
+	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagImageQuality, "image-quality", "q", 80, "Image quality for compression (1-100)")
+	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagImageFormat, "image-format", "f", string(compress.JXL), fmt.Sprintf("Image format for compression (%v)", strings.Join(formatSlice(compress.ImageAvailableFormats), ", ")))
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
