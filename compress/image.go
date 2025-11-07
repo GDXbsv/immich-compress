@@ -96,7 +96,7 @@ func (c *ImageConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	}
 
 	// Create temporary output file
-	fileOut, err := os.CreateTemp("", fmt.Sprintf("%s.%s", filepath.Base(asset.OriginalPath), c.Format))
+	fileOut, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("%s.%s", filepath.Base(asset.OriginalPath), c.Format)))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp output file: %w", err)
 	}
