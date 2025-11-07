@@ -15,6 +15,8 @@ func (c *ClientSimple) AssetSearch(limit int, search SearchAssetsJSONRequestBody
 		Asset AssetResponseDto
 		Err   error
 	}, c.parallel)
+	withExif := true
+	search.WithExif = &withExif
 	go func() {
 		defer close(ch)
 		var page float32 = 1

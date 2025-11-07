@@ -66,10 +66,16 @@ func Compressing(ctx context.Context, config Config) error {
 			}
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
+			err = compresFile(client, asset.Asset, ImageConfig{
+				Format:  JXL,
+				Quality: 80,
+			})
+			if err != nil {
+				return err
+			}
 			atomic.AddInt32(&counter, 1)
-			// TODO: Add actual compression logic here
 
-			return nil // Success for this asset
+			return nil
 		})
 	}
 

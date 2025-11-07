@@ -2,6 +2,7 @@ package compress
 
 import (
 	"fmt"
+	"math"
 
 	"immich-compress/immich"
 
@@ -9,28 +10,55 @@ import (
 	"github.com/google/uuid"
 )
 
-func compresFile(client immich.ClientSimple, asset immich.AssetResponseDto, imageConfig ImageConfig) error {
+func compresFile(client *immich.ClientSimple, asset immich.AssetResponseDto, imageConfig ImageConfig) error {
+	skipped := true
+	var sizeOrig int64
+	var sizeNew int64
 	switch asset.Type {
 	case "IMAGE":
 		fileBytes, err := compressImage(client, asset, imageConfig)
 		if err != nil {
 			return err
 		}
-		err = uploadBuffer(client, asset, fileBytes)
-		if err != nil {
-			return err
-		}
-		return nil
+		sizeOrig = *asset.ExifInfo.FileSizeInByte
+		sizeNew = int64(len(fileBytes))
 
+		if useNewFileBuffer(sizeNew, sizeOrig) {
+			err = uploadBuffer(client, asset, fileBytes)
+			if err != nil {
+				return err
+			}
+			skipped = false
+		}
 	case "VIDEO":
 		// compressVideo(asset)
 		return fmt.Errorf("VIDEO not yet supported")
 	default:
 		return fmt.Errorf("we do not support type: %s", asset.Type)
 	}
+
+	sizeOrigMB := bytesToMB(sizeOrig)
+	sizeNewMB := bytesToMB(sizeNew)
+	sizeSavedMB := bytesToMB(sizeOrig - sizeNew)
+
+	if skipped {
+		fmt.Printf("✗ Skipped: %s (Original: %.2f MB, Converted: %.2f MB, No size reduction)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB)
+	} else {
+		fmt.Printf("✓ Replaced: %s (Original: %.2f MB, Converted: %.2f MB, Saved: %.2f MB)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB, sizeSavedMB)
+	}
+
+	return nil
 }
 
-func uploadBuffer(client immich.ClientSimple, asset immich.AssetResponseDto, fileBuffer []byte) error {
+func useNewFileBuffer(sizeNew int64, sizeOrig int64) bool {
+	return sizeOrig-sizeNew >= 60000
+}
+
+func bytesToMB(bytes int64) float64 {
+	return float64(bytes) / math.Pow(1024, 2)
+}
+
+func uploadBuffer(client *immich.ClientSimple, asset immich.AssetResponseDto, fileBuffer []byte) error {
 	// // Parse asset UUID
 	// assetUUID, err := immich.UUUIDOfString(asset.Id)
 	// if err != nil {
@@ -131,7 +159,7 @@ const (
 
 var ImageAvailableFormats = []ImageFormat{JPG, JPEG, JXL, WEBP, HEIF}
 
-func compressImage(client immich.ClientSimple, asset immich.AssetResponseDto, imageConfig ImageConfig) ([]byte, error) {
+func compressImage(client *immich.ClientSimple, asset immich.AssetResponseDto, imageConfig ImageConfig) ([]byte, error) {
 	uuid, err := uuid.Parse(asset.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse uuid '%s': %w", asset.Id, err)
