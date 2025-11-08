@@ -10,6 +10,14 @@ A CLI tool for compressing existing photos and videos in Immich by downloading, 
 
 This project is currently under active development. While the core infrastructure is in place and tests are passing, some features may still be incomplete or subject to change.
 
+TODO:
+
+- [x] Compression video/audio
+- [ ] Upload compressed
+  - [ ] shadow tags/metadata/sidecar
+- [ ] Add compressed tags
+- [ ] Remove old one
+
 ## 📋 Table of Contents
 
 - [Features](#features)
