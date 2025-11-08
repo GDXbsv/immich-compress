@@ -1,6 +1,7 @@
 package compress
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -29,7 +30,7 @@ const (
 
 var ImageFormatsAvailable = []ImageFormat{JPG, JPEG, JXL, WEBP, HEIF}
 
-func (c *ImageConfig) compress(client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error) {
+func (c *ImageConfig) compress(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error) {
 	uuid, err := uuid.Parse(asset.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse uuid '%s': %w", asset.Id, err)

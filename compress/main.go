@@ -4,6 +4,7 @@ package compress
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sync/atomic"
 	"time"
 
@@ -17,6 +18,7 @@ type Config struct {
 	Parallel       int
 	Limit          int
 	AssetType      string
+	AssetUUIDs     []string
 	Server         string
 	APIKey         string
 	After          time.Time
@@ -43,6 +45,14 @@ func Compressing(ctx context.Context, config Config) error {
 		typeAsset := (immich.AssetTypeEnum)(config.AssetType)
 		searchOption.Type = &typeAsset
 	}
+	// if len(config.AssetUUIDs) == 1 {
+	// 	UUIDstring := config.AssetUUIDs[0]
+	// 	UUID, err := uuid.Parse(UUIDstring)
+	// 	if err != nil {
+	// 		return err
+	// 	}
+	// 	searchOption.Id = &UUID
+	// }
 	ch := client.AssetSearch(config.Limit, searchOption)
 	// Start the workers. Instead of 'for range parallel', we simply
 	// read from the channel and run g.Go() for *each* element.
@@ -67,12 +77,18 @@ func Compressing(ctx context.Context, config Config) error {
 				return asset.Err
 			}
 
+			if len(config.AssetUUIDs) > 0 {
+				if !slices.Contains(config.AssetUUIDs, asset.Asset.Id) {
+					return nil
+				}
+			}
+
 			if !asset.Asset.CompressedAfter(config.After) {
 				return nil
 			}
 			// Process the asset here
 			fmt.Printf("Processing file: %#v\n", asset.Asset.Id)
-			err = compressFile(client, asset.Asset, config.DiffPercent, ImageConfig{
+			err = compressFile(gCtx, client, asset.Asset, config.DiffPercent, ImageConfig{
 				Format:  config.ImageFormat,
 				Quality: config.ImageQuality,
 			}, VideoConfig{

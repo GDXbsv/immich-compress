@@ -1,6 +1,7 @@
 package compress
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -8,10 +9,10 @@ import (
 )
 
 type compress interface {
-	compress(client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error)
+	compress(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error)
 }
 
-func compressFile(client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, imageConfig ImageConfig, videoConfig VideoConfig) error {
+func compressFile(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto, diffPercent int, imageConfig ImageConfig, videoConfig VideoConfig) error {
 	skipped := true
 	sizeOrig := *asset.ExifInfo.FileSizeInByte
 	var sizeNew int64
@@ -25,7 +26,7 @@ func compressFile(client *immich.ClientSimple, asset immich.AssetResponseDto, di
 		return fmt.Errorf("we do not support type: %s", asset.Type)
 	}
 
-	file, err := compress.compress(client, asset)
+	file, err := compress.compress(ctx, client, asset)
 	if err != nil {
 		return err
 	}

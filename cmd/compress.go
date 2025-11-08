@@ -23,6 +23,7 @@ var flagsCompress struct {
 	flagServer         string
 	flagAPIKey         string
 	flagAssetType      string
+	flagAssetUUIDs     []string
 	flagImageQuality   int
 	flagImageFormat    string
 	flagVideoQuality   int
@@ -52,6 +53,7 @@ var compressCmd = &cobra.Command{
 			Parallel:       flagsRoot.flagParallel,
 			Limit:          flagsRoot.flagLimit,
 			AssetType:      flagsCompress.flagAssetType,
+			AssetUUIDs:     flagsCompress.flagAssetUUIDs,
 			Server:         flagsCompress.flagServer,
 			APIKey:         flagsCompress.flagAPIKey,
 			After:          flagsRoot.flagAfter,
@@ -81,6 +83,7 @@ func init() {
 		panic(err)
 	}
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagAssetType, "type", "i", "ALL", "Asset type to compress (IMAGE, VIDEO, ALL)")
+	compressCmd.PersistentFlags().StringArrayVarP(&flagsCompress.flagAssetUUIDs, "uuids", "u", []string{}, "Assets UUIDs")
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagImageQuality, "image-quality", "q", 80, "Image quality for compression (1-100)")
 	compressCmd.PersistentFlags().StringVarP(&flagsCompress.flagImageFormat, "image-format", "f", string(compress.JXL), fmt.Sprintf("Image format for compression (%v)", strings.Join(formatSlice(compress.ImageFormatsAvailable), ", ")))
 	compressCmd.PersistentFlags().IntVarP(&flagsCompress.flagVideoQuality, "video-quality", "Q", 25, "Video quality for compression (1-100). Lower is higher quality")

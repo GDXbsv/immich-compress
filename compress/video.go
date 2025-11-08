@@ -1,6 +1,7 @@
 package compress
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -38,7 +39,7 @@ const (
 
 var VideoFormatsAvailable = []VideoFormat{AV1, HEVC, H264}
 
-func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error) {
+func (c *VideoConfig) compress(ctx context.Context, client *immich.ClientSimple, asset immich.AssetResponseDto) (*os.File, error) {
 	uuid, err := uuid.Parse(asset.Id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse uuid '%s': %w", asset.Id, err)
@@ -130,7 +131,7 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 		fileOutPath,
 	}...)
 
-	cmd := exec.Command("ffmpeg", args...)
+	cmd := exec.CommandContext(ctx, "ffmpeg", args...)
 
 	// Run the command and capture its output
 	output, err := cmd.CombinedOutput()
