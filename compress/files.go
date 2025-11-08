@@ -38,6 +38,9 @@ func compressFile(client *immich.ClientSimple, asset immich.AssetResponseDto, di
 
 	// 3. Get the size from the FileInfo
 	sizeNew = fileInfo.Size()
+	if sizeNew == 0 {
+		return fmt.Errorf("compressed size is 0 most likely we have an error")
+	}
 
 	if sizeOrig-sizeNew > int64(float64(sizeOrig)*(float64(diffPercent)/100)) {
 		err = uploadFile(client, asset, file)
@@ -53,9 +56,13 @@ func compressFile(client *immich.ClientSimple, asset immich.AssetResponseDto, di
 
 	if skipped {
 		fmt.Printf("✗ Skipped: %s (Original: %.2f MB, Converted: %.2f MB, No size reduction)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB)
-	} else {
-		fmt.Printf("✓ Replaced: %s (Original: %.2f MB, Converted: %.2f MB, Saved: %.2f MB)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB, sizeSavedMB)
+		return nil
 	}
+	fmt.Printf("✓ Replaced: %s (Original: %.2f MB, Converted: %.2f MB, Saved: %.2f MB)\n", asset.OriginalFileName, sizeOrigMB, sizeNewMB, sizeSavedMB)
+
+	// todo upload to immich
+	// todo update tags
+	// todo remove orig to trash
 
 	return nil
 }
