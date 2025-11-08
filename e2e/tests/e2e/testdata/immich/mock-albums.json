@@ -1,0 +1,26 @@
+[
+  {
+    "id": "album-1",
+    "name": "Test Album",
+    "asset_count": 5,
+    "created_at": "2025-11-08T23:07:50+01:00",
+    "assets": [
+      {
+        "id": "asset-1",
+        "original_path": "/photos/IMG_001.jpg",
+        "file_name": "IMG_001.jpg",
+        "mime_type": "image/jpeg",
+        "file_size": 2048000,
+        "created_at": "2025-11-07T23:07:50+01:00"
+      },
+      {
+        "id": "asset-2",
+        "original_path": "/photos/video.mp4",
+        "file_name": "video.mp4",
+        "mime_type": "video/mp4",
+        "file_size": 10485760,
+        "created_at": "2025-11-08T11:07:50+01:00"
+      }
+    ]
+  }
+]
