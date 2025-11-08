@@ -53,11 +53,7 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	defer os.Remove(fileIn.Name())
 
 	// Create temporary output file
-	fileOut, err := os.Create(filepath.Join(os.TempDir(), fmt.Sprintf("%s.%s", filepath.Base(asset.OriginalPath), c.Container)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create temp output file: %w", err)
-	}
-	defer fileOut.Close()
+	fileOutPath := filepath.Join(os.TempDir(), fmt.Sprintf("%s-compressed.%s", uuid.String(), string(c.Container)))
 
 	// Download video to temporary input file
 	resp, err := client.AssetDownload(uuid)
@@ -73,7 +69,7 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	}
 	fileIn.Close() // Close to ensure all data is written
 
-	args := make([]string, 20)
+	args := make([]string, 0, 20)
 	args = append(args,
 		"-i", fileIn.Name(),
 	)
@@ -131,7 +127,7 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	// -b:a 128k: Set audio bitrate to 128kbps.
 	args = append(args, []string{
 		"-crf", strconv.Itoa(c.Quality), // Was 30. Lower is higher quality.
-		fileOut.Name(),
+		fileOutPath,
 	}...)
 
 	cmd := exec.Command("ffmpeg", args...)
@@ -139,7 +135,13 @@ func (c *VideoConfig) compress(client *immich.ClientSimple, asset immich.AssetRe
 	// Run the command and capture its output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("ffmpeg failed with output '' %w", string(output), err)
+		return nil, fmt.Errorf("ffmpeg failed with output '%s' %w", string(output), err)
+	}
+
+	// Create temporary output file
+	fileOut, err := os.Open(fileOutPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open temp output file: %w", err)
 	}
 
 	return fileOut, nil
