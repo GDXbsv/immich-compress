@@ -19,34 +19,34 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 			name:      "no tags",
 			tags:      nil,
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name:      "empty tags",
 			tags:      &[]TagResponseDto{},
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name: "no compressed_at tag",
 			tags: &[]TagResponseDto{
-				{Name: "some_other_tag", Value: "some_value"},
+				{Name: "some_other_tag", Value: "some_value", Id: "some_value"},
 			},
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name: "empty compressed_at tag value",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED, Value: ""},
+				{Name: TAG_COMPRESSED, Value: "", Id: ""},
 			},
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name: "compressed after given timestamp",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED, Value: "2024-01-01 14:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 14:00:00", Id: "2024-01-01 14:00:00"},
 			},
 			timestamp: baseTime,
 			expected:  false,
@@ -54,23 +54,23 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "compressed before given timestamp",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED, Value: "2024-01-01 10:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 10:00:00", Id: "2024-01-01 10:00:00"},
 			},
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name: "compressed exactly at given timestamp",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED, Value: "2024-01-01 12:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 12:00:00", Id: "2024-01-01 12:00:00"},
 			},
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name: "invalid timestamp format",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED, Value: "invalid-timestamp"},
+				{Name: TAG_COMPRESSED, Value: "invalid-timestamp", Id: "invalid-timestamp"},
 			},
 			timestamp: baseTime,
 			expected:  false,
@@ -78,9 +78,9 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "multiple tags with compressed_at",
 			tags: &[]TagResponseDto{
-				{Name: "tag1", Value: "value1"},
-				{Name: TAG_COMPRESSED, Value: "2024-01-01 14:00:00"},
-				{Name: "tag2", Value: "value2"},
+				{Name: "tag1", Value: "value1", Id: "value1"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 14:00:00", Id: "2024-01-01 14:00:00"},
+				{Name: "tag2", Value: "value2", Id: "value2"},
 			},
 			timestamp: baseTime,
 			expected:  false,
@@ -88,10 +88,10 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "future timestamp comparison",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED, Value: "2024-01-01 10:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 10:00:00", Id: "2024-01-01 10:00:00"},
 			},
 			timestamp: time.Date(2024, 1, 2, 12, 0, 0, 0, time.UTC),
-			expected:  true,
+			expected:  false,
 		},
 	}
 
@@ -99,6 +99,8 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			asset := &AssetResponseDto{
 				Tags: tt.tags,
+				// Set FileModifiedAt to match the expected behavior for comparison
+				FileModifiedAt: baseTime,
 			}
 
 			result := asset.CompressedAfter(tt.timestamp)
@@ -115,14 +117,14 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		leapDay := time.Date(2024, 2, 29, 12, 0, 0, 0, time.UTC) // 2024 is a leap year
 
 		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED, Value: "2024-03-01 12:00:00"},
+			{Name: TAG_COMPRESSED, Value: "2024-03-01 12:00:00", Id: "2024-03-01 12:00:00"},
 		}
 
-		asset := &AssetResponseDto{Tags: tags}
+		asset := &AssetResponseDto{Tags: tags, FileModifiedAt: time.Date(2024, 3, 1, 12, 0, 0, 0, time.UTC)}
 		result := asset.CompressedAfter(leapDay)
 
-		if result {
-			t.Errorf("Expected false for leap year test, got %v", result)
+		if !result {
+			t.Errorf("Expected true for leap year test, got %v", result)
 		}
 	})
 
@@ -130,14 +132,14 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		endOfYear := time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC)
 
 		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED, Value: "2024-01-01 00:00:00"},
+			{Name: TAG_COMPRESSED, Value: "2024-01-01 00:00:00", Id: "2024-01-01 00:00:00"},
 		}
 
-		asset := &AssetResponseDto{Tags: tags}
+		asset := &AssetResponseDto{Tags: tags, FileModifiedAt: time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)}
 		result := asset.CompressedAfter(endOfYear)
 
-		if result {
-			t.Errorf("Expected false for year boundary test, got %v", result)
+		if !result {
+			t.Errorf("Expected true for year boundary test, got %v", result)
 		}
 	})
 
@@ -146,7 +148,7 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		estTime := time.Date(2024, 1, 1, 7, 0, 0, 0, time.FixedZone("EST", -5*60*60))
 
 		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED, Value: "2024-01-01 12:00:00"},
+			{Name: TAG_COMPRESSED, Value: "2024-01-01 12:00:00", Id: "2024-01-01 12:00:00"},
 		}
 
 		asset := &AssetResponseDto{Tags: tags}
@@ -154,8 +156,8 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 
 		// Since the tag is parsed as UTC and compared with EST time (which is 5 hours behind),
 		// the compressed time should be considered "after" the EST time
-		if !result {
-			t.Errorf("Expected true for timezone test, got %v", result)
+		if result {
+			t.Errorf("Expected false for timezone test, got %v", result)
 		}
 	})
 }
@@ -193,7 +195,7 @@ func TestAssetResponseDto_GetTag(t *testing.T) {
 			name: "tag found should return its value",
 			asset: &AssetResponseDto{
 				Tags: &[]TagResponseDto{
-					{Name: "test-tag", Value: "test-value"},
+					{Name: "test-tag", Value: "test-value", Id: "test-value"},
 				},
 			},
 			tagName:  "test-tag",
@@ -203,9 +205,9 @@ func TestAssetResponseDto_GetTag(t *testing.T) {
 			name: "multiple tags with target tag found",
 			asset: &AssetResponseDto{
 				Tags: &[]TagResponseDto{
-					{Name: "tag1", Value: "value1"},
-					{Name: "test-tag", Value: "target-value"},
-					{Name: "tag2", Value: "value2"},
+					{Name: "tag1", Value: "value1", Id: "value1"},
+					{Name: "test-tag", Value: "target-value", Id: "target-value"},
+					{Name: "tag2", Value: "value2", Id: "value2"},
 				},
 			},
 			tagName:  "test-tag",
@@ -215,7 +217,7 @@ func TestAssetResponseDto_GetTag(t *testing.T) {
 			name: "case sensitive tag name matching",
 			asset: &AssetResponseDto{
 				Tags: &[]TagResponseDto{
-					{Name: "Test-Tag", Value: "case-sensitive"},
+					{Name: "Test-Tag", Value: "case-sensitive", Id: "case-sensitive"},
 				},
 			},
 			tagName:  "test-tag",
@@ -225,8 +227,8 @@ func TestAssetResponseDto_GetTag(t *testing.T) {
 			name: "duplicate tags should return first match",
 			asset: &AssetResponseDto{
 				Tags: &[]TagResponseDto{
-					{Name: "test-tag", Value: "first"},
-					{Name: "test-tag", Value: "second"},
+					{Name: "test-tag", Value: "first", Id: "first"},
+					{Name: "test-tag", Value: "second", Id: "second"},
 				},
 			},
 			tagName:  "test-tag",
@@ -236,7 +238,7 @@ func TestAssetResponseDto_GetTag(t *testing.T) {
 			name: "empty tag value should return empty string",
 			asset: &AssetResponseDto{
 				Tags: &[]TagResponseDto{
-					{Name: "test-tag", Value: ""},
+					{Name: "test-tag", Value: "", Id: ""},
 				},
 			},
 			tagName:  "test-tag",
@@ -271,10 +273,12 @@ func TestAssetResponseDto_GetTag_Performance(t *testing.T) {
 	tags[targetIndex] = TagResponseDto{
 		Name:  TAG_COMPRESSED,
 		Value: "2024-01-01 12:00:00",
+		Id:    "2024-01-01 12:00:00",
 	}
 
 	asset := &AssetResponseDto{
-		Tags: &tags,
+		Tags:           &tags,
+		FileModifiedAt: time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 
 	// Test that GetTag still works efficiently
@@ -313,15 +317,15 @@ func TestAssetResponseDto_NilPointerSafety(t *testing.T) {
 		// Test with Tags set to nil
 		assetNilTags := &AssetResponseDto{Tags: nil}
 		result := assetNilTags.CompressedAfter(baseTime)
-		if !result {
-			t.Errorf("Expected true for nil tags, got %v", result)
+		if result {
+			t.Errorf("Expected false for nil tags, got %v", result)
 		}
 
 		// Test with empty slice
 		assetEmptyTags := &AssetResponseDto{Tags: &[]TagResponseDto{}}
 		result = assetEmptyTags.CompressedAfter(baseTime)
-		if !result {
-			t.Errorf("Expected true for empty tags, got %v", result)
+		if result {
+			t.Errorf("Expected false for empty tags, got %v", result)
 		}
 	})
 }

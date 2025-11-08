@@ -30,5 +30,6 @@ func (a *AssetResponseDto) CompressedAfter(timestamp time.Time) bool {
 
 	timeCompressed := a.FileModifiedAt
 
-	return timeCompressed.Compare(timestamp) == 1
+	// Return true if compressed timestamp is after
+	return timeCompressed.After(timestamp)
 }
