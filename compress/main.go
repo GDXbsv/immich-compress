@@ -10,6 +10,7 @@ import (
 
 	"immich-compress/immich"
 
+	"github.com/google/uuid"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -45,14 +46,14 @@ func Compressing(ctx context.Context, config Config) error {
 		typeAsset := (immich.AssetTypeEnum)(config.AssetType)
 		searchOption.Type = &typeAsset
 	}
-	// if len(config.AssetUUIDs) == 1 {
-	// 	UUIDstring := config.AssetUUIDs[0]
-	// 	UUID, err := uuid.Parse(UUIDstring)
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// 	searchOption.Id = &UUID
-	// }
+	if len(config.AssetUUIDs) == 1 {
+		UUIDstring := config.AssetUUIDs[0]
+		UUID, err := uuid.Parse(UUIDstring)
+		if err != nil {
+			return err
+		}
+		searchOption.Id = &UUID
+	}
 	ch := client.AssetSearch(config.Limit, searchOption)
 	// Start the workers. Instead of 'for range parallel', we simply
 	// read from the channel and run g.Go() for *each* element.
