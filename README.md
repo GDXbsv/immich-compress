@@ -123,7 +123,7 @@ immich-compress compress --server https://your-immich-server.com --api-key YOUR_
 immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --limit 100
 
 # Compress specific assets by UUID
-immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --uuids "uuid1" --uuids "uuid2" --uuids "uuid3"
+immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --uuid "uuid1" --uuid "uuid2" --uuid "uuid3"
 
 # Combine options - limited batch with parallel processing
 immich-compress compress --server https://your-immich-server.com --api-key YOUR_API_KEY --parallel 4 --limit 50
@@ -161,7 +161,7 @@ immich-compress compress --help
 - `--server, -s string`: **Required** - Immich server address
 - `--api-key, -a string`: **Required** - Immich server API key
 - `--type, -i string`: Asset type to compress (IMAGE, VIDEO, ALL) (default: ALL)
-- `--uuids, -u string`: Assets UUIDs (array)
+- `--uuid, -u string`: Assets UUIDs (array)
 - `--image-quality, -q int`: Image quality for compression (1-100) (default: 80)
 - `--image-format, -f string`: Image format for compression (jpg, jpeg, jxl, webp, heif) (default: jpg)
 - `--video-quality, -Q int`: Video quality for compression (1-100) Lower is higher quality (default: 25)
