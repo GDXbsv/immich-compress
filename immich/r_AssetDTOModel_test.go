@@ -73,7 +73,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 				{Name: TAG_COMPRESSED_AT, Value: "invalid-timestamp"},
 			},
 			timestamp: baseTime,
-			expected:  true,
+			expected:  false,
 		},
 		{
 			name: "multiple tags with compressed_at",
