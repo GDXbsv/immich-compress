@@ -6,8 +6,6 @@ import (
 	"runtime"
 	"time"
 
-	"immich-compress/immich"
-
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +43,7 @@ func init() {
 
 	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.immich-compress.yaml)")
 	rootCmd.PersistentFlags().IntVarP(&flagsRoot.flagParallel, "parallel", "p", runtime.NumCPU(), "parallel")
-	rootCmd.PersistentFlags().TimeVarP(&flagsRoot.flagAfter, "after", "t", time.Now(), []string{immich.TAG_COMPRESSED_AT_FORMAT}, "after what time we want to recompress")
+	rootCmd.PersistentFlags().TimeVarP(&flagsRoot.flagAfter, "after", "t", time.Now(), []string{"2006-01-02 15:04:05"}, "after what time we want to recompress")
 	rootCmd.PersistentFlags().IntVarP(&flagsRoot.flagLimit, "limit", "l", 0, "maximum number of assets to compress")
 
 	// Cobra also supports local flags, which will only run

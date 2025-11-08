@@ -38,7 +38,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "empty compressed_at tag value",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED_AT, Value: ""},
+				{Name: TAG_COMPRESSED, Value: ""},
 			},
 			timestamp: baseTime,
 			expected:  true,
@@ -46,7 +46,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "compressed after given timestamp",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 14:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 14:00:00"},
 			},
 			timestamp: baseTime,
 			expected:  false,
@@ -54,7 +54,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "compressed before given timestamp",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 10:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 10:00:00"},
 			},
 			timestamp: baseTime,
 			expected:  true,
@@ -62,7 +62,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "compressed exactly at given timestamp",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 12:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 12:00:00"},
 			},
 			timestamp: baseTime,
 			expected:  true,
@@ -70,7 +70,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "invalid timestamp format",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED_AT, Value: "invalid-timestamp"},
+				{Name: TAG_COMPRESSED, Value: "invalid-timestamp"},
 			},
 			timestamp: baseTime,
 			expected:  false,
@@ -79,7 +79,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 			name: "multiple tags with compressed_at",
 			tags: &[]TagResponseDto{
 				{Name: "tag1", Value: "value1"},
-				{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 14:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 14:00:00"},
 				{Name: "tag2", Value: "value2"},
 			},
 			timestamp: baseTime,
@@ -88,7 +88,7 @@ func TestAssetResponseDto_CompressedAfter(t *testing.T) {
 		{
 			name: "future timestamp comparison",
 			tags: &[]TagResponseDto{
-				{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 10:00:00"},
+				{Name: TAG_COMPRESSED, Value: "2024-01-01 10:00:00"},
 			},
 			timestamp: time.Date(2024, 1, 2, 12, 0, 0, 0, time.UTC),
 			expected:  true,
@@ -115,7 +115,7 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		leapDay := time.Date(2024, 2, 29, 12, 0, 0, 0, time.UTC) // 2024 is a leap year
 
 		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED_AT, Value: "2024-03-01 12:00:00"},
+			{Name: TAG_COMPRESSED, Value: "2024-03-01 12:00:00"},
 		}
 
 		asset := &AssetResponseDto{Tags: tags}
@@ -130,7 +130,7 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		endOfYear := time.Date(2023, 12, 31, 23, 59, 59, 0, time.UTC)
 
 		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 00:00:00"},
+			{Name: TAG_COMPRESSED, Value: "2024-01-01 00:00:00"},
 		}
 
 		asset := &AssetResponseDto{Tags: tags}
@@ -146,7 +146,7 @@ func TestAssetResponseDto_CompressedAfter_EdgeCases(t *testing.T) {
 		estTime := time.Date(2024, 1, 1, 7, 0, 0, 0, time.FixedZone("EST", -5*60*60))
 
 		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED_AT, Value: "2024-01-01 12:00:00"},
+			{Name: TAG_COMPRESSED, Value: "2024-01-01 12:00:00"},
 		}
 
 		asset := &AssetResponseDto{Tags: tags}
@@ -254,57 +254,6 @@ func TestAssetResponseDto_GetTag(t *testing.T) {
 	}
 }
 
-// Test edge case with very large time values
-func TestAssetResponseDto_CompressedAfter_EdgeCaseTimes(t *testing.T) {
-	t.Run("very old timestamp", func(t *testing.T) {
-		veryOldTime := time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC)
-		currentTime := time.Now()
-
-		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED_AT, Value: veryOldTime.Format(TAG_COMPRESSED_AT_FORMAT)},
-		}
-
-		asset := &AssetResponseDto{Tags: tags}
-		result := asset.CompressedAfter(currentTime)
-
-		if !result {
-			t.Errorf("Expected true for very old timestamp, got %v", result)
-		}
-	})
-
-	t.Run("future timestamp", func(t *testing.T) {
-		currentTime := time.Now()
-		farFutureTime := currentTime.AddDate(10, 0, 0)
-
-		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED_AT, Value: farFutureTime.Format(TAG_COMPRESSED_AT_FORMAT)},
-		}
-
-		asset := &AssetResponseDto{Tags: tags}
-		result := asset.CompressedAfter(currentTime)
-
-		if result {
-			t.Errorf("Expected false for future timestamp, got %v", result)
-		}
-	})
-
-	t.Run("microsecond precision test", func(t *testing.T) {
-		baseTime := time.Date(2024, 1, 1, 12, 0, 0, 0, time.UTC)
-		slightlyLater := baseTime.Add(time.Microsecond)
-
-		tags := &[]TagResponseDto{
-			{Name: TAG_COMPRESSED_AT, Value: baseTime.Format(TAG_COMPRESSED_AT_FORMAT)},
-		}
-
-		asset := &AssetResponseDto{Tags: tags}
-		result := asset.CompressedAfter(slightlyLater)
-
-		if !result {
-			t.Errorf("Expected true for microsecond precision test, got %v", result)
-		}
-	})
-}
-
 // Test performance with large number of tags
 func TestAssetResponseDto_GetTag_Performance(t *testing.T) {
 	// Create asset with many tags
@@ -320,7 +269,7 @@ func TestAssetResponseDto_GetTag_Performance(t *testing.T) {
 	// Add our target tag somewhere in the middle
 	targetIndex := numTags / 2
 	tags[targetIndex] = TagResponseDto{
-		Name:  TAG_COMPRESSED_AT,
+		Name:  TAG_COMPRESSED,
 		Value: "2024-01-01 12:00:00",
 	}
 
@@ -329,7 +278,7 @@ func TestAssetResponseDto_GetTag_Performance(t *testing.T) {
 	}
 
 	// Test that GetTag still works efficiently
-	result := asset.GetTag(TAG_COMPRESSED_AT)
+	result := asset.GetTag(TAG_COMPRESSED)
 	if result != "2024-01-01 12:00:00" {
 		t.Errorf("Expected '2024-01-01 12:00:00', got %v", result)
 	}
@@ -338,24 +287,11 @@ func TestAssetResponseDto_GetTag_Performance(t *testing.T) {
 	benchmarkResult := testing.Benchmark(func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			asset.GetTag(TAG_COMPRESSED_AT)
+			asset.GetTag(TAG_COMPRESSED)
 		}
 	})
 
 	t.Logf("GetTag performance: %v ns/op", benchmarkResult.NsPerOp())
-}
-
-// Test constants validation
-func TestTagConstants(t *testing.T) {
-	if TAG_COMPRESSED_AT != "__compressed_at__" {
-		t.Errorf("TAG_COMPRESSED_AT = %v, want %v", TAG_COMPRESSED_AT, "__compressed_at__")
-	}
-	if TAG_COMPRESSED_AT_FORMAT != "2006-01-02 15:04:05" {
-		t.Errorf("TAG_COMPRESSED_AT_FORMAT = %v, want %v", TAG_COMPRESSED_AT_FORMAT, "2006-01-02 15:04:05")
-	}
-	if TAG_ROOT != "__immich-compress__" {
-		t.Errorf("TAG_ROOT = %v, want %v", TAG_ROOT, "__immich-compress__")
-	}
 }
 
 // Test memory safety with nil pointer scenarios

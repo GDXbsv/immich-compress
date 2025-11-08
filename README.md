@@ -13,10 +13,10 @@ This project is currently under active development. While the core infrastructur
 TODO:
 
 - [x] Compression video/audio
-- [ ] Upload compressed
-  - [ ] shadow tags/metadata/sidecar
-- [ ] Add compressed tags
-- [ ] Remove old one
+- [x] Upload compressed
+  - [x] shadow tags/metadata/sidecar
+- [x] Add compressed tags
+- [x] Remove old one
 
 ## 📋 Table of Contents
 

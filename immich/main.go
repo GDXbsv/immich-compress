@@ -16,7 +16,7 @@ type ClientSimple struct {
 	ctx       context.Context
 	parallel  int
 	tags      struct {
-		compressedAtID types.UUID
+		compressedID types.UUID
 	}
 }
 
@@ -39,7 +39,7 @@ func NewClientSimple(ctx context.Context, parralel int, baseURL string, apiKey s
 		return nil, fmt.Errorf("can not get/create tags: %w", err)
 	}
 
-	clientSimple.tags = struct{ compressedAtID types.UUID }{compressedAtID: tagCompressedAtID}
+	clientSimple.tags = struct{ compressedID types.UUID }{compressedID: tagCompressedAtID}
 
 	return clientSimple, nil
 }

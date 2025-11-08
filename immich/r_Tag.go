@@ -1,21 +1,34 @@
 package immich
 
 import (
+	"fmt"
+
 	"github.com/oapi-codegen/runtime/types"
 )
 
 const (
-	TAG_ROOT                 = "__immich-compress__"
-	TAG_COMPRESSED_AT        = "__compressed_at__"
-	TAG_COMPRESSED_AT_FORMAT = "2006-01-02 15:04:05"
+	TAG_ROOT       = "__immich-compress__"
+	TAG_COMPRESSED = "__compressed__"
 )
+
+func (c *ClientSimple) TagCompressedAdd(assetID types.UUID) error {
+	_, err := c.client.BulkTagAssetsWithResponse(c.ctx, TagBulkAssetsDto{
+		AssetIds: []types.UUID{assetID},
+		TagIds:   []types.UUID{c.tags.compressedID},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to attach tags: %w", err)
+	}
+
+	return err
+}
 
 func (c *ClientSimple) tagCompressedAt() (types.UUID, error) {
 	tagRootID, _, err := c.tagFindCreate(TAG_ROOT, nil)
 	if err != nil {
 		return tagRootID, err
 	}
-	tagCompressID, _, err := c.tagFindCreate(TAG_COMPRESSED_AT, &tagRootID)
+	tagCompressID, _, err := c.tagFindCreate(TAG_COMPRESSED, &tagRootID)
 	if err != nil {
 		return tagCompressID, err
 	}
@@ -52,9 +65,4 @@ func (c *ClientSimple) tagFindCreate(name string, parent *types.UUID) (types.UUI
 	uuid, err = UUUIDOfString(tagFound.Id)
 
 	return uuid, tagFound, err
-
-	// respParsed, err := ParseDownloadAssetResponse(r)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error parsing download response: %w", err)
-	// }
 }

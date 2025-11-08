@@ -1,7 +1,6 @@
 package immich
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -12,7 +11,7 @@ func (a *AssetResponseDto) GetTag(tagName string) string {
 		// Now it's safe to use *
 		for _, tag := range *a.Tags {
 			if tag.Name == tagName {
-				value = tag.Value
+				value = tag.Id
 				return value
 			}
 		}
@@ -24,23 +23,12 @@ func (a *AssetResponseDto) GetTag(tagName string) string {
 }
 
 func (a *AssetResponseDto) CompressedAfter(timestamp time.Time) bool {
-	when := a.GetTag(TAG_COMPRESSED_AT)
-	var timeCompressed time.Time
-	var err error
-
-	if when == "" {
-		return true
-	}
-	timeCompressed, err = time.Parse(TAG_COMPRESSED_AT_FORMAT, when)
-	if err != nil {
-		// Show warning for invalid timestamp format and treat as not compressed
-		fmt.Printf("✗ Tag '%s' with value '%s' parsed with error: %v\n", TAG_COMPRESSED_AT, when, err)
+	id := a.GetTag(TAG_COMPRESSED)
+	if id == "" {
 		return false
 	}
 
-	if timeCompressed.Compare(timestamp) != 1 {
-		return true
-	}
+	timeCompressed := a.FileModifiedAt
 
-	return false
+	return timeCompressed.Compare(timestamp) == 1
 }
