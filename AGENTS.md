@@ -10,6 +10,15 @@
 - `go mod tidy` - Clean up dependencies
 - `go mod download` - Download dependencies
 
+## E2E Testing Commands
+
+- `cd e2e/tests && go test -v .` - Run all E2E tests
+- `cd e2e/tests && go test -v -run "TestCLI" .` - Run CLI integration tests
+- `cd e2e/tests && go test -v -run "TestImage" .` - Run image workflow tests
+- `cd e2e/tests && go test -v -run "TestVideo" .` - Run video workflow tests
+- `cd e2e/tests && go test -v -run "TestImmich" .` - Run Immich integration tests
+- `cd e2e/tests && go test -v -timeout 5m .` - Run with extended timeout
+
 ## System Dependencies
 
 The application requires the following system dependencies:
@@ -17,25 +26,25 @@ The application requires the following system dependencies:
 ### Ubuntu/Debian
 
 ```bash
-sudo apt-get install -y pkg-config libvips-dev
+sudo apt-get install -y pkg-config libvips-dev ffmpeg
 ```
 
 ### macOS
 
 ```bash
-brew install vips pkg-config
+brew install vips pkg-config ffmpeg
 ```
 
 ### Arch Linux
 
 ```bash
-pacman -S pkgconfig libvips
+pacman -S pkgconfig libvips ffmpeg
 ```
 
 ### Fedora
 
 ```bash
-dnf install pkgconfig vips-devel
+dnf install pkgconfig vips-devel ffmpeg
 ```
 
 ## Advanced Setup
@@ -109,6 +118,7 @@ export CGO_CFLAGS_ALLOW="-Xpreprocessor"
 - **Triggered on**: Push and Pull Request to main/master/develop branches
 - **Jobs**:
   - **test**: Runs tests with coverage, race detection, and builds
+  - **e2e**: End-to-end testing with full system dependencies
   - **lint**: Code quality checks with golangci-lint
 - **Go Version**: Uses Go ^1.24
 - **Setup Action**: actions/setup-go@v4
@@ -116,8 +126,22 @@ export CGO_CFLAGS_ALLOW="-Xpreprocessor"
 - **System Dependencies**:
   - Comprehensive libvips dependencies built from source
   - Meson, Ninja build system
+  - FFmpeg for video processing
   - All major image format libraries (JPEG, PNG, TIFF, WebP, HEIF, JPEG-XL, etc.)
 - **Caching**: libvips build caching and Go module caching for faster builds
+
+### E2E Testing
+- **Location**: `e2e/tests/` directory
+- **Framework**: Custom test runner with mock server support
+- **Test Coverage**:
+  - CLI integration tests (7 tests)
+  - Image workflow tests (8 tests)
+  - Video workflow tests (8 tests)
+  - Immich API integration tests (8 tests)
+  - Framework validation tests (3 tests)
+- **Total**: 34+ comprehensive E2E tests
+- **Mock Services**: Simulated Immich API server for testing
+- **Execution**: `cd e2e/tests && go test -v .`
 
 ## Code Style Guidelines
 
@@ -135,6 +159,10 @@ export CGO_CFLAGS_ALLOW="-Xpreprocessor"
 - `cmd/` - CLI command definitions
 - `compress/` - Core compression logic
 - `immich/` - Auto-generated Immich API client
+- `e2e/` - End-to-end testing framework
+  - `tests/` - E2E test suites (CLI, image, video, Immich integration)
+  - `framework/` - Test runner and utilities
+  - `mocks/` - Mock server implementations
 - Entry point: `main.go` → `cmd.Execute()`
 
 ## Naming Conventions

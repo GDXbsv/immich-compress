@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -31,7 +31,8 @@ jobs:
           gobject-introspection libgirepository1.0-dev \
           libmagickwand-dev libmatio-dev libnifti2-dev \
           libjxl-dev libzip-dev libarchive-dev \
-          pkg-config
+          pkg-config \
+          ffmpeg
 
           # Create missing NIfTI pkg-config file to help libvips meson detect it
           sudo mkdir -p /usr/local/lib/pkgconfig
@@ -142,6 +143,101 @@ jobs:
       - name: Build application
         run: |
           $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go build -v ./...
+
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      CGO_CFLAGS_ALLOW: -Xpreprocessor
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+          meson ninja-build \
+          libglib2.0-dev libexpat-dev librsvg2-dev libpng-dev \
+          libjpeg-turbo8-dev libimagequant-dev libfftw3-dev \
+          libpoppler-glib-dev libxml2-dev \
+          libopenslide-dev libcfitsio-dev liborc-0.4-dev libpango1.0-dev \
+          libtiff5-dev libgsf-1-dev giflib-tools libwebp-dev libheif-dev \
+          libopenjp2-7-dev libcgif-dev \
+          gobject-introspection libgirepository1.0-dev \
+          libmagickwand-dev libmatio-dev libnifti2-dev \
+          libjxl-dev libzip-dev libarchive-dev \
+          pkg-config \
+          ffmpeg
+
+      - name: Build libvips from source
+        run: |
+          VIPS_VERSION="8.17.3"
+          if [ ! -d "vips-$VIPS_VERSION" ]
+          then
+            wget https://github.com/libvips/libvips/releases/download/v$VIPS_VERSION/vips-$VIPS_VERSION.tar.xz
+            tar xf vips-$VIPS_VERSION.tar.xz
+          fi
+          cd vips-$VIPS_VERSION
+
+          # Detect all available features
+          PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:/usr/lib/pkgconfig meson setup _build \
+          --buildtype=release \
+          --strip \
+          --prefix=/usr/local \
+          --libdir=lib \
+          -Dmagick=enabled \
+          -Dopenslide=enabled \
+          -Dintrospection=enabled \
+          -Djpeg-xl=enabled
+
+          ninja -C _build
+          sudo ninja -C _build install
+          sudo ldconfig
+        shell: bash
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ^1.24
+          cache: true
+
+      - name: Cache Go dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-e2e-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-e2e-go-
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Get E2E test dependencies
+        run: |
+          cd e2e
+          go mod download
+
+      - name: Run E2E tests
+        run: |
+          cd e2e/tests
+          $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go test -v -timeout 5m .
+
+      - name: Run E2E tests with coverage
+        run: |
+          cd e2e/tests
+          $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go test -v -coverprofile=e2e-coverage.out -timeout 5m .
+
+      - name: Build application for E2E
+        run: |
+          $(CGO_CFLAGS_ALLOW="-Xpreprocessor") go build -o immich-compress .
+
+      - name: Test built application
+        run: |
+          ./immich-compress --help
+          ./immich-compress compress --help
 
   lint:
     runs-on: ubuntu-latest
